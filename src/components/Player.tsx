@@ -6,6 +6,7 @@ import { getMoveVector, input } from "@/game/input";
 import { resolveCollision } from "@/game/collision";
 import { PLAYER, CAMERA } from "@/game/constants";
 import { useGame } from "@/game/store";
+import { publishPosition } from "@/game/multiplayer";
 
 const _look = new THREE.Vector3();
 const _cinematicPos = new THREE.Vector3();
@@ -82,6 +83,9 @@ export function Player() {
       );
       camera.lookAt(CAMERA.cinematicTarget);
     }
+
+    // +PI because character body faces opposite to camera direction
+    publishPosition(g.position.x, g.position.z, facing.current + Math.PI);
   });
 
   return (

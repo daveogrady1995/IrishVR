@@ -9,6 +9,7 @@ interface CharacterProps {
   pantsColor?: string;
   speaking?: boolean;
   facing?: number;
+  walking?: boolean;
 }
 
 const HEAD_Y = 1.55;
@@ -21,6 +22,7 @@ export function Character({
   pantsColor = '#2a2520',
   speaking = false,
   facing = 0,
+  walking = false,
 }: CharacterProps) {
   const group = useRef<THREE.Group>(null);
   const head = useRef<THREE.Group>(null);
@@ -28,6 +30,8 @@ export function Character({
   const rightHand = useRef<THREE.Group>(null);
   const leftArm = useRef<THREE.Group>(null);
   const rightArm = useRef<THREE.Group>(null);
+  const leftLeg = useRef<THREE.Group>(null);
+  const rightLeg = useRef<THREE.Group>(null);
   const t = useRef(0);
 
   useFrame((_, delta) => {
@@ -54,7 +58,19 @@ export function Character({
       if (rightArm.current) rightArm.current.rotation.x = 0.15 + gesture2 * 0.35;
       if (leftHand.current) leftHand.current.position.y = 0.85 + Math.abs(gesture) * 0.12;
       if (rightHand.current) rightHand.current.position.y = 0.85 + Math.abs(gesture2) * 0.12;
+      if (leftLeg.current) leftLeg.current.rotation.x = THREE.MathUtils.lerp(leftLeg.current.rotation.x, 0, 0.12);
+      if (rightLeg.current) rightLeg.current.rotation.x = THREE.MathUtils.lerp(rightLeg.current.rotation.x, 0, 0.12);
+    } else if (walking) {
+      const swing = Math.sin(time * 7) * 0.55;
+      if (leftLeg.current) leftLeg.current.rotation.x = swing;
+      if (rightLeg.current) rightLeg.current.rotation.x = -swing;
+      if (leftArm.current) leftArm.current.rotation.x = -swing * 0.5;
+      if (rightArm.current) rightArm.current.rotation.x = swing * 0.5;
+      if (leftHand.current) leftHand.current.position.y = THREE.MathUtils.lerp(leftHand.current.position.y, 0.85, 0.12);
+      if (rightHand.current) rightHand.current.position.y = THREE.MathUtils.lerp(rightHand.current.position.y, 0.85, 0.12);
     } else {
+      if (leftLeg.current) leftLeg.current.rotation.x = THREE.MathUtils.lerp(leftLeg.current.rotation.x, 0, 0.12);
+      if (rightLeg.current) rightLeg.current.rotation.x = THREE.MathUtils.lerp(rightLeg.current.rotation.x, 0, 0.12);
       const idle = Math.sin(time * 1.5);
       if (leftArm.current)
         leftArm.current.rotation.x = THREE.MathUtils.lerp(
@@ -85,24 +101,27 @@ export function Character({
 
   return (
     <group ref={group}>
-      {/* Legs */}
-      <mesh position={[-0.16, 0.4, 0]} castShadow>
-        <boxGeometry args={[0.22, 0.8, 0.24]} />
-        <meshStandardMaterial color={pantsColor} roughness={0.8} />
-      </mesh>
-      <mesh position={[0.16, 0.4, 0]} castShadow>
-        <boxGeometry args={[0.22, 0.8, 0.24]} />
-        <meshStandardMaterial color={pantsColor} roughness={0.8} />
-      </mesh>
-      {/* Shoes */}
-      <mesh position={[-0.16, 0.04, 0.04]} castShadow>
-        <boxGeometry args={[0.24, 0.1, 0.32]} />
-        <meshStandardMaterial color="#1f1b17" roughness={0.5} />
-      </mesh>
-      <mesh position={[0.16, 0.04, 0.04]} castShadow>
-        <boxGeometry args={[0.24, 0.1, 0.32]} />
-        <meshStandardMaterial color="#1f1b17" roughness={0.5} />
-      </mesh>
+      {/* Legs + Shoes — pivot at hip (y=0.8) so they swing from the hip */}
+      <group ref={leftLeg} position={[-0.16, 0.8, 0]}>
+        <mesh position={[0, -0.4, 0]} castShadow>
+          <boxGeometry args={[0.22, 0.8, 0.24]} />
+          <meshStandardMaterial color={pantsColor} roughness={0.8} />
+        </mesh>
+        <mesh position={[0, -0.76, 0.04]} castShadow>
+          <boxGeometry args={[0.24, 0.1, 0.32]} />
+          <meshStandardMaterial color="#1f1b17" roughness={0.5} />
+        </mesh>
+      </group>
+      <group ref={rightLeg} position={[0.16, 0.8, 0]}>
+        <mesh position={[0, -0.4, 0]} castShadow>
+          <boxGeometry args={[0.22, 0.8, 0.24]} />
+          <meshStandardMaterial color={pantsColor} roughness={0.8} />
+        </mesh>
+        <mesh position={[0, -0.76, 0.04]} castShadow>
+          <boxGeometry args={[0.24, 0.1, 0.32]} />
+          <meshStandardMaterial color="#1f1b17" roughness={0.5} />
+        </mesh>
+      </group>
 
       {/* Torso */}
       <mesh position={[0, 0.95, 0]} castShadow>

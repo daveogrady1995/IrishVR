@@ -4,6 +4,7 @@ import { ContactShadows } from "@react-three/drei";
 import { Room } from "./Room";
 import { Player } from "./Player";
 import { NPCs } from "./NPCs";
+import { OtherPlayers } from "./OtherPlayers";
 
 export function Scene() {
   return (
@@ -47,6 +48,7 @@ export function Scene() {
         <Room />
         <Player />
         <NPCs />
+        <OtherPlayers />
         <ContactShadows
           position={[0, 0.01, 0]}
           opacity={0.35}
