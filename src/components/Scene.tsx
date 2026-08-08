@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { ContactShadows, SoftShadows } from '@react-three/drei';
+import { ContactShadows } from '@react-three/drei';
 import { Room } from './Room';
 import { Player } from './Player';
 import { NPCs } from './NPCs';
@@ -16,8 +16,6 @@ export function Scene() {
     >
       <color attach="background" args={['#1a1612']} />
       <fog attach="fog" args={['#1a1612', 22, 38]} />
-
-      <SoftShadows size={28} samples={12} focus={0.6} />
 
       {/* Warm ambient */}
       <ambientLight intensity={0.45} color="#fff0d4" />
