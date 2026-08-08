@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import * as THREE from 'three';
+import { useTexture } from '@react-three/drei';
 import { ROOM } from '@/game/constants';
 
 function Wall({
@@ -208,6 +209,113 @@ function FloorMat({ position, rotation }: { position: [number, number, number]; 
   );
 }
 
+function PosterFrame({
+  position, rotationY, width, height, children,
+}: {
+  position: [number, number, number]; rotationY: number;
+  width: number; height: number; children: React.ReactNode;
+}) {
+  return (
+    <group position={position} rotation={[0, rotationY, 0]}>
+      <mesh>
+        <boxGeometry args={[width + 0.1, height + 0.1, 0.04]} />
+        <meshStandardMaterial color="#1a0e05" roughness={0.7} />
+      </mesh>
+      {children}
+    </group>
+  );
+}
+
+function PhotoPoster({
+  position, rotationY, url, width = 2.0, height = 1.35,
+}: {
+  position: [number, number, number]; rotationY: number;
+  url: string; width?: number; height?: number;
+}) {
+  const texture = useTexture(url);
+  return (
+    <PosterFrame position={position} rotationY={rotationY} width={width} height={height}>
+      <mesh position={[0, 0, 0.03]}>
+        <planeGeometry args={[width, height]} />
+        <meshStandardMaterial map={texture} roughness={0.85} />
+      </mesh>
+    </PosterFrame>
+  );
+}
+
+function CurseIsBrokenPoster({
+  position, rotationY,
+}: {
+  position: [number, number, number]; rotationY: number;
+}) {
+  const texture = useMemo(() => {
+    const c = document.createElement('canvas');
+    c.width = 512; c.height = 768;
+    const ctx = c.getContext('2d')!;
+    ctx.fillStyle = '#00521a'; ctx.fillRect(0, 0, 512, 768);
+    ctx.fillStyle = '#c80000'; ctx.fillRect(0, 0, 512, 110); ctx.fillRect(0, 658, 512, 110);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 54px Arial'; ctx.textAlign = 'center';
+    ctx.fillText('MAYO GAA', 256, 75);
+    ctx.fillText('2026 CHAMPIONS', 256, 728);
+    ctx.fillStyle = '#ffd700'; ctx.font = '56px serif';
+    ctx.fillText('★  ★  ★  ★', 256, 185);
+    ctx.font = 'bold 80px Arial'; ctx.fillText('THE CURSE', 256, 300);
+    ctx.fillText('IS OVER!', 256, 400);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 34px Arial';
+    ctx.fillText('75 YEARS OF HEARTBREAK', 256, 480);
+    ctx.fillText('ENDED • 26 JULY 2026', 256, 528);
+    ctx.fillStyle = '#ffd700'; ctx.font = 'bold 30px Arial';
+    ctx.fillText('MAYO 1–20  KERRY 1–17', 256, 590);
+    ctx.fillStyle = '#fff'; ctx.font = '26px Arial';
+    ctx.fillText('All-Ireland Final • Croke Park', 256, 632);
+    return new THREE.CanvasTexture(c);
+  }, []);
+  return (
+    <PosterFrame position={position} rotationY={rotationY} width={1.6} height={2.4}>
+      <mesh position={[0, 0, 0.03]}>
+        <planeGeometry args={[1.6, 2.4]} />
+        <meshStandardMaterial map={texture} roughness={0.85} />
+      </mesh>
+    </PosterFrame>
+  );
+}
+
+function MayoBannerPoster({
+  position, rotationY,
+}: {
+  position: [number, number, number]; rotationY: number;
+}) {
+  const texture = useMemo(() => {
+    const c = document.createElement('canvas');
+    c.width = 768; c.height = 512;
+    const ctx = c.getContext('2d')!;
+    const grad = ctx.createLinearGradient(0, 0, 768, 0);
+    grad.addColorStop(0, '#00521a'); grad.addColorStop(0.5, '#007d28'); grad.addColorStop(1, '#00521a');
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, 768, 512);
+    ctx.fillStyle = '#c80000';
+    ctx.fillRect(0, 0, 768, 80); ctx.fillRect(0, 432, 768, 80);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 60px Arial'; ctx.textAlign = 'center';
+    ctx.fillText('MAYO', 384, 55);
+    ctx.fillText('GREEN & RED FOREVER', 384, 476);
+    ctx.fillStyle = '#ffd700'; ctx.font = 'bold 88px serif';
+    ctx.fillText('SAM IS HOME!', 384, 220);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 44px Arial';
+    ctx.fillText('All-Ireland Senior Football', 384, 300);
+    ctx.fillText('Champions 2026', 384, 360);
+    ctx.fillStyle = '#ffd700'; ctx.font = '44px serif';
+    ctx.fillText('★ ★ ★ ★ ★ ★', 384, 420);
+    return new THREE.CanvasTexture(c);
+  }, []);
+  return (
+    <PosterFrame position={position} rotationY={rotationY} width={2.4} height={1.6}>
+      <mesh position={[0, 0, 0.03]}>
+        <planeGeometry args={[2.4, 1.6]} />
+        <meshStandardMaterial map={texture} roughness={0.85} />
+      </mesh>
+    </PosterFrame>
+  );
+}
+
 export function Room() {
   const { half, wallHeight, wallThickness } = ROOM;
   return (
@@ -254,6 +362,12 @@ export function Room() {
       <Bookshelf position={[-9.5, 0, -3]} rotation={Math.PI / 2} />
       <FloorMat position={[3, 0.01, -8]} rotation={0} />
       <FloorMat position={[-3, 0.01, 5]} rotation={0.3} />
+
+      {/* Mayo GAA posters */}
+      <CurseIsBrokenPoster position={[-3.2, 2.2, -9.8]} rotationY={0} />
+      <PhotoPoster position={[3.2, 2.2, -9.8]} rotationY={0} url="/images/mayo-celebration.jpg" width={2.0} height={1.4} />
+      <PhotoPoster position={[-9.8, 2.2, -2]} rotationY={Math.PI / 2} url="/images/mayo-poster.jpg" width={1.8} height={2.2} />
+      <MayoBannerPoster position={[9.8, 2.3, 2]} rotationY={-Math.PI / 2} />
     </group>
   );
 }

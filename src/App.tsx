@@ -1,11 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Scene } from '@/components/Scene';
 import { HUD } from '@/components/HUD';
 import { Joystick } from '@/components/Joystick';
 import { DialogueOverlay } from '@/components/DialogueOverlay';
 import { ProximityPrompt } from '@/components/ProximityPrompt';
 import { useGame } from '@/game/store';
-import { setupKeyboard, setupMouseDrag } from '@/game/input';
+import { setupKeyboard, setupMouseDrag, input } from '@/game/input';
 
 function useResponsive() {
   const setIsMobile = useGame((s) => s.setIsMobile);
@@ -48,10 +48,44 @@ function useListenKey() {
   }, [nearby, listening, startListening, togglePause, nextLine, dialogueEnded]);
 }
 
+// Right-half touch drag for camera look on mobile
+function TouchLook() {
+  const touch = useRef<{ id: number; x: number; y: number } | null>(null);
+  return (
+    <div
+      className="pointer-events-auto absolute inset-y-0 right-0 w-1/2"
+      onTouchStart={(e) => {
+        if (touch.current) return;
+        const t = e.changedTouches[0];
+        touch.current = { id: t.identifier, x: t.clientX, y: t.clientY };
+      }}
+      onTouchMove={(e) => {
+        if (!touch.current) return;
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          const t = e.changedTouches[i];
+          if (t.identifier !== touch.current.id) continue;
+          input.cameraYaw -= (t.clientX - touch.current.x) * 0.004;
+          input.cameraPitch -= (t.clientY - touch.current.y) * 0.004;
+          input.cameraPitch = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, input.cameraPitch));
+          touch.current = { id: t.identifier, x: t.clientX, y: t.clientY };
+          break;
+        }
+      }}
+      onTouchEnd={(e) => {
+        if (!touch.current) return;
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          if (e.changedTouches[i].identifier === touch.current.id) { touch.current = null; break; }
+        }
+      }}
+    />
+  );
+}
+
 export default function App() {
   useResponsive();
   useListenKey();
   const isMobile = useGame((s) => s.isMobile);
+  const listening = useGame((s) => s.listening);
 
   useEffect(() => {
     const kb = setupKeyboard();
@@ -73,10 +107,17 @@ export default function App() {
         <DialogueOverlay />
       </div>
 
-      {/* Mobile joystick */}
-      {isMobile && (
+      {/* Mobile joystick — hidden during dialogue so it doesn't overlap */}
+      {isMobile && !listening && (
         <div className="pointer-events-none absolute bottom-6 left-6 z-20">
           <Joystick />
+        </div>
+      )}
+
+      {/* Mobile right-side touch area for camera pivot */}
+      {isMobile && !listening && (
+        <div className="pointer-events-none absolute inset-0 z-20">
+          <TouchLook />
         </div>
       )}
 
