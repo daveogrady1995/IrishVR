@@ -1,4 +1,4 @@
-import { ref, set, update, onValue, onDisconnect, push, query, limitToLast } from "firebase/database";
+import { ref, set, update, onValue, onDisconnect, push } from "firebase/database";
 import { useEffect, useState } from "react";
 import { db } from "@/firebase";
 
@@ -42,9 +42,8 @@ export function publishPosition(x: number, z: number, rotY: number) {
 
 export function sendChatMessage(text: string) {
   const name = getPlayerName();
-  push(ref(db, "chat"), { name, text, t: Date.now() });
+  push(ref(db, `chat/${playerId}`), { name, text, t: Date.now() });
   update(ref(db, `players/${playerId}`), { message: text, messageTime: Date.now() });
-  // Clear speech bubble from Firebase after 10s so late-joiners don't see stale bubbles
   setTimeout(() => update(ref(db, `players/${playerId}`), { message: null, messageTime: null }), 10000);
 }
 
@@ -53,7 +52,9 @@ export function useOtherPlayers(): RemotePlayer[] {
 
   useEffect(() => {
     const myRef = ref(db, `players/${playerId}`);
+    const myChatRef = ref(db, `chat/${playerId}`);
     onDisconnect(myRef).remove();
+    onDisconnect(myChatRef).remove();
 
     const allRef = ref(db, "players");
     const unsub = onValue(allRef, (snap) => {
@@ -78,6 +79,7 @@ export function useOtherPlayers(): RemotePlayer[] {
     return () => {
       unsub();
       set(myRef, null);
+      set(myChatRef, null);
     };
   }, []);
 
@@ -88,15 +90,16 @@ export function useChat(): ChatMessage[] {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   useEffect(() => {
-    const chatQuery = query(ref(db, "chat"), limitToLast(20));
-    const unsub = onValue(chatQuery, (snap) => {
+    const unsub = onValue(ref(db, "chat"), (snap) => {
       const data = snap.val();
       if (!data) { setMessages([]); return; }
-      setMessages(
-        Object.entries(data)
-          .map(([id, m]: any) => ({ id, ...m }))
-          .sort((a, b) => a.t - b.t)
-      );
+      const all: ChatMessage[] = [];
+      for (const pid of Object.keys(data)) {
+        for (const [id, m] of Object.entries(data[pid] as Record<string, any>)) {
+          all.push({ id, ...m });
+        }
+      }
+      setMessages(all.sort((a, b) => a.t - b.t).slice(-20));
     });
     return () => unsub();
   }, []);
