@@ -1,25 +1,25 @@
-import { useEffect, useRef } from 'react';
-import { Scene } from '@/components/Scene';
-import { HUD } from '@/components/HUD';
-import { Joystick } from '@/components/Joystick';
-import { DialogueOverlay } from '@/components/DialogueOverlay';
-import { ProximityPrompt } from '@/components/ProximityPrompt';
-import { useGame } from '@/game/store';
-import { setupKeyboard, setupMouseDrag, input } from '@/game/input';
+import { useEffect, useRef } from "react";
+import { Scene } from "@/components/Scene";
+import { HUD } from "@/components/HUD";
+import { Joystick } from "@/components/Joystick";
+import { DialogueOverlay } from "@/components/DialogueOverlay";
+import { ProximityPrompt } from "@/components/ProximityPrompt";
+import { useGame } from "@/game/store";
+import { setupKeyboard, setupMouseDrag, input } from "@/game/input";
 
 function useResponsive() {
   const setIsMobile = useGame((s) => s.setIsMobile);
   useEffect(() => {
     const check = () => {
       const mobile =
-        window.matchMedia('(pointer: coarse)').matches ||
-        'ontouchstart' in window ||
+        window.matchMedia("(pointer: coarse)").matches ||
+        "ontouchstart" in window ||
         window.innerWidth < 768;
       setIsMobile(mobile);
     };
     check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
   }, [setIsMobile]);
 }
 
@@ -34,17 +34,17 @@ function useListenKey() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
-      if (k === 'e' && nearby && !listening) {
+      if (k === "e" && nearby && !listening) {
         startListening();
-      } else if (k === ' ' && listening && !dialogueEnded) {
+      } else if (k === " " && listening && !dialogueEnded) {
         e.preventDefault();
         togglePause();
-      } else if (k === 'f' && listening && !dialogueEnded) {
+      } else if (k === "f" && listening && !dialogueEnded) {
         nextLine();
       }
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [nearby, listening, startListening, togglePause, nextLine, dialogueEnded]);
 }
 
@@ -66,7 +66,10 @@ function TouchLook() {
           if (t.identifier !== touch.current.id) continue;
           input.cameraYaw -= (t.clientX - touch.current.x) * 0.004;
           input.cameraPitch -= (t.clientY - touch.current.y) * 0.004;
-          input.cameraPitch = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, input.cameraPitch));
+          input.cameraPitch = Math.max(
+            -Math.PI / 2.5,
+            Math.min(Math.PI / 2.5, input.cameraPitch),
+          );
           touch.current = { id: t.identifier, x: t.clientX, y: t.clientY };
           break;
         }
@@ -74,7 +77,10 @@ function TouchLook() {
       onTouchEnd={(e) => {
         if (!touch.current) return;
         for (let i = 0; i < e.changedTouches.length; i++) {
-          if (e.changedTouches[i].identifier === touch.current.id) { touch.current = null; break; }
+          if (e.changedTouches[i].identifier === touch.current.id) {
+            touch.current = null;
+            break;
+          }
         }
       }}
     />
@@ -126,7 +132,7 @@ export default function App() {
         className="pointer-events-none absolute inset-0 z-0"
         style={{
           background:
-            'radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.45) 100%)',
+            "radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.45) 100%)",
         }}
       />
     </div>
