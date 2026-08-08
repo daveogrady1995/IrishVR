@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import * as THREE from "three";
 import { useTexture } from "@react-three/drei";
 import { ROOM } from "@/game/constants";
+import { SamMaguireCup } from "./SamMaguireCup";
 
 function Wall({
   args,
@@ -454,6 +455,9 @@ export function Room() {
         height={2.2}
       />
       <MayoBannerPoster position={[9.8, 2.3, 2]} rotationY={-Math.PI / 2} />
+
+      {/* Sam Maguire Cup — centre of the room on a pedestal */}
+      <SamMaguireCup position={[0, 0, -4]} />
     </group>
   );
 }

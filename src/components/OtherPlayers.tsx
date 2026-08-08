@@ -1,5 +1,6 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
+import { Html } from "@react-three/drei";
 import * as THREE from "three";
 import { Character } from "./Character";
 import { useOtherPlayers, type RemotePlayer } from "@/game/multiplayer";
@@ -13,6 +14,14 @@ function OtherPlayer({ target }: { target: RemotePlayer }) {
   const lastMoved = useRef(0);
   const walkState = useRef(false);
   const [walking, setWalking] = useState(false);
+  const [activeMessage, setActiveMessage] = useState<string | undefined>();
+
+  useEffect(() => {
+    if (!target.message || !target.messageTime) return;
+    setActiveMessage(target.message);
+    const t = setTimeout(() => setActiveMessage(undefined), 8000);
+    return () => clearTimeout(t);
+  }, [target.message, target.messageTime]);
 
   useFrame((_, delta) => {
     const g = groupRef.current;
@@ -43,6 +52,31 @@ function OtherPlayer({ target }: { target: RemotePlayer }) {
         facing={target.rotY}
         walking={walking}
       />
+      {/* Name tag */}
+      <Html center position={[0, 2.15, 0]} zIndexRange={[10, 0]} distanceFactor={10}>
+        <div style={{
+          background: "rgba(0,0,0,0.65)", color: "#fff",
+          padding: "2px 8px", borderRadius: 4, fontSize: 12,
+          fontWeight: "bold", whiteSpace: "nowrap", display: "inline-block",
+          pointerEvents: "none",
+        }}>
+          {target.name}
+        </div>
+      </Html>
+      {/* Speech bubble */}
+      {activeMessage && (
+        <Html center position={[0, 2.65, 0]} zIndexRange={[10, 0]} distanceFactor={10}>
+          <div style={{
+            background: "#fff", color: "#1a1a1a",
+            padding: "5px 10px", borderRadius: 8, fontSize: 12,
+            whiteSpace: "nowrap", display: "inline-block",
+            maxWidth: 200, overflowWrap: "break-word",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.35)", pointerEvents: "none",
+          }}>
+            {activeMessage}
+          </div>
+        </Html>
+      )}
     </group>
   );
 }

@@ -1,9 +1,11 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Scene } from "@/components/Scene";
 import { HUD } from "@/components/HUD";
 import { Joystick } from "@/components/Joystick";
 import { DialogueOverlay } from "@/components/DialogueOverlay";
 import { ProximityPrompt } from "@/components/ProximityPrompt";
+import { NamePrompt } from "@/components/NamePrompt";
+import { ChatOverlay } from "@/components/ChatOverlay";
 import { useGame } from "@/game/store";
 import { setupKeyboard, setupMouseDrag, input } from "@/game/input";
 
@@ -92,6 +94,7 @@ export default function App() {
   useListenKey();
   const isMobile = useGame((s) => s.isMobile);
   const listening = useGame((s) => s.listening);
+  const [hasName, setHasName] = useState(() => !!sessionStorage.getItem("vr-player-name"));
 
   useEffect(() => {
     const kb = setupKeyboard();
@@ -135,6 +138,9 @@ export default function App() {
             "radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.45) 100%)",
         }}
       />
+
+      <ChatOverlay />
+      {!hasName && <NamePrompt onDone={() => setHasName(true)} />}
     </div>
   );
 }
