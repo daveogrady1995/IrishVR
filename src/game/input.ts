@@ -2,12 +2,20 @@ export const input = {
   keys: new Set<string>(),
   joystick: { x: 0, y: 0, active: false },
   cameraYaw: 0,
+  cameraPitch: 0,
+  pointerLocked: false,
   rightDrag: { active: false, lastX: 0 },
 };
 
 const MOVE_KEYS = new Set([
-  'w', 'a', 's', 'd',
-  'arrowup', 'arrowdown', 'arrowleft', 'arrowright',
+  "w",
+  "a",
+  "s",
+  "d",
+  "arrowup",
+  "arrowdown",
+  "arrowleft",
+  "arrowright",
 ]);
 
 export function setupKeyboard() {
@@ -21,14 +29,14 @@ export function setupKeyboard() {
   };
   const blur = () => input.keys.clear();
 
-  window.addEventListener('keydown', down);
-  window.addEventListener('keyup', up);
-  window.addEventListener('blur', blur);
+  window.addEventListener("keydown", down);
+  window.addEventListener("keyup", up);
+  window.addEventListener("blur", blur);
 
   return () => {
-    window.removeEventListener('keydown', down);
-    window.removeEventListener('keyup', up);
-    window.removeEventListener('blur', blur);
+    window.removeEventListener("keydown", down);
+    window.removeEventListener("keyup", up);
+    window.removeEventListener("blur", blur);
   };
 }
 
@@ -39,27 +47,41 @@ export function setupMouseDrag() {
     input.rightDrag.lastX = e.clientX;
   };
   const onMouseMove = (e: MouseEvent) => {
-    if (!input.rightDrag.active) return;
-    const dx = e.clientX - input.rightDrag.lastX;
-    input.rightDrag.lastX = e.clientX;
-    input.cameraYaw -= dx * 0.005;
+    if (input.pointerLocked) {
+      input.cameraYaw -= e.movementX * 0.002;
+      input.cameraPitch -= e.movementY * 0.002;
+      // clamp pitch to avoid flipping
+      input.cameraPitch = Math.max(
+        -Math.PI / 2.5,
+        Math.min(Math.PI / 2.5, input.cameraPitch),
+      );
+    } else if (input.rightDrag.active) {
+      const dx = e.clientX - input.rightDrag.lastX;
+      input.rightDrag.lastX = e.clientX;
+      input.cameraYaw -= dx * 0.005;
+    }
   };
   const onMouseUp = (e: MouseEvent) => {
     if (e.button !== 2) return;
     input.rightDrag.active = false;
   };
   const onContext = (e: Event) => e.preventDefault();
+  const onLockChange = () => {
+    input.pointerLocked = !!document.pointerLockElement;
+  };
 
-  window.addEventListener('mousedown', onMouseDown);
-  window.addEventListener('mousemove', onMouseMove);
-  window.addEventListener('mouseup', onMouseUp);
-  window.addEventListener('contextmenu', onContext);
+  window.addEventListener("mousedown", onMouseDown);
+  window.addEventListener("mousemove", onMouseMove);
+  window.addEventListener("mouseup", onMouseUp);
+  window.addEventListener("contextmenu", onContext);
+  document.addEventListener("pointerlockchange", onLockChange);
 
   return () => {
-    window.removeEventListener('mousedown', onMouseDown);
-    window.removeEventListener('mousemove', onMouseMove);
-    window.removeEventListener('mouseup', onMouseUp);
-    window.removeEventListener('contextmenu', onContext);
+    window.removeEventListener("mousedown", onMouseDown);
+    window.removeEventListener("mousemove", onMouseMove);
+    window.removeEventListener("mouseup", onMouseUp);
+    window.removeEventListener("contextmenu", onContext);
+    document.removeEventListener("pointerlockchange", onLockChange);
   };
 }
 
@@ -67,12 +89,15 @@ export function getMoveVector(): { x: number; y: number } {
   let x = 0;
   let y = 0;
   const k = input.keys;
-  if (k.has('w') || k.has('arrowup')) y -= 1;
-  if (k.has('s') || k.has('arrowdown')) y += 1;
-  if (k.has('a') || k.has('arrowleft')) x -= 1;
-  if (k.has('d') || k.has('arrowright')) x += 1;
+  if (k.has("w") || k.has("arrowup")) y -= 1;
+  if (k.has("s") || k.has("arrowdown")) y += 1;
+  if (k.has("a") || k.has("arrowleft")) x -= 1;
+  if (k.has("d") || k.has("arrowright")) x += 1;
 
-  if (input.joystick.active && (input.joystick.x !== 0 || input.joystick.y !== 0)) {
+  if (
+    input.joystick.active &&
+    (input.joystick.x !== 0 || input.joystick.y !== 0)
+  ) {
     x = input.joystick.x;
     y = -input.joystick.y;
   }
@@ -83,11 +108,10 @@ export function getMoveVector(): { x: number; y: number } {
     y /= mag;
   }
 
-  // Rotate the move vector by cameraYaw so W always goes
-  // where the camera is facing (Roblox-style).
+  // Rotate move vector into world-space based on camera yaw.
   const cos = Math.cos(input.cameraYaw);
   const sin = Math.sin(input.cameraYaw);
-  const rx = x * cos - y * sin;
-  const ry = x * sin + y * cos;
+  const rx = x * cos + y * sin;
+  const ry = -x * sin + y * cos;
   return { x: rx, y: ry };
 }
