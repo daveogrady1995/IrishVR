@@ -7,6 +7,7 @@ import { ProximityPrompt } from "@/components/ProximityPrompt";
 import { NamePrompt } from "@/components/NamePrompt";
 import { ChatOverlay } from "@/components/ChatOverlay";
 import { CinemaUI } from "@/components/CinemaUI";
+import { CursorHint } from "@/components/CursorHint";
 import { useGame } from "@/game/store";
 import { setupKeyboard, setupMouseDrag, input } from "@/game/input";
 
@@ -51,41 +52,34 @@ function useListenKey() {
   }, [nearby, listening, startListening, togglePause, nextLine, dialogueEnded]);
 }
 
-// Right-half touch drag for camera look on mobile
+// Full-screen drag area for camera look on mobile; sits under the UI layer so buttons stay tappable
 function TouchLook() {
   const touch = useRef<{ id: number; x: number; y: number } | null>(null);
+  const release = (e: React.PointerEvent) => {
+    if (touch.current?.id === e.pointerId) touch.current = null;
+  };
   return (
     <div
-      className="pointer-events-auto absolute inset-y-0 right-0 w-1/2"
-      onTouchStart={(e) => {
+      className="pointer-events-auto absolute inset-0"
+      style={{ touchAction: "none" }}
+      onPointerDown={(e) => {
         if (touch.current) return;
-        const t = e.changedTouches[0];
-        touch.current = { id: t.identifier, x: t.clientX, y: t.clientY };
+        e.currentTarget.setPointerCapture(e.pointerId);
+        touch.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
       }}
-      onTouchMove={(e) => {
-        if (!touch.current) return;
-        for (let i = 0; i < e.changedTouches.length; i++) {
-          const t = e.changedTouches[i];
-          if (t.identifier !== touch.current.id) continue;
-          input.cameraYaw -= (t.clientX - touch.current.x) * 0.004;
-          input.cameraPitch -= (t.clientY - touch.current.y) * 0.004;
-          input.cameraPitch = Math.max(
-            -Math.PI / 2.5,
-            Math.min(Math.PI / 2.5, input.cameraPitch),
-          );
-          touch.current = { id: t.identifier, x: t.clientX, y: t.clientY };
-          break;
-        }
+      onPointerMove={(e) => {
+        if (touch.current?.id !== e.pointerId) return;
+        input.cameraYaw -= (e.clientX - touch.current.x) * 0.006;
+        input.cameraPitch -= (e.clientY - touch.current.y) * 0.004;
+        input.cameraPitch = Math.max(
+          -Math.PI / 2.5,
+          Math.min(Math.PI / 2.5, input.cameraPitch),
+        );
+        touch.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
       }}
-      onTouchEnd={(e) => {
-        if (!touch.current) return;
-        for (let i = 0; i < e.changedTouches.length; i++) {
-          if (e.changedTouches[i].identifier === touch.current.id) {
-            touch.current = null;
-            break;
-          }
-        }
-      }}
+      onPointerUp={release}
+      onPointerCancel={release}
+      onLostPointerCapture={release}
     />
   );
 }
@@ -112,11 +106,19 @@ export default function App() {
     <div className="relative h-full w-full overflow-hidden bg-ink-950">
       <Scene />
 
+      {/* Mobile touch-look area — under the UI layer so buttons still receive taps */}
+      {isMobile && !listening && (
+        <div className="absolute inset-0 z-[5]">
+          <TouchLook />
+        </div>
+      )}
+
       {/* UI Layer */}
       <div className="pointer-events-none absolute inset-0 z-10 select-none">
         <HUD />
         <ProximityPrompt />
         <CinemaUI />
+        <CursorHint />
         <DialogueOverlay />
       </div>
 
@@ -124,13 +126,6 @@ export default function App() {
       {isMobile && !listening && (
         <div className="pointer-events-none absolute bottom-6 left-6 z-20">
           <Joystick />
-        </div>
-      )}
-
-      {/* Mobile right-side touch area for camera pivot */}
-      {isMobile && !listening && (
-        <div className="pointer-events-none absolute inset-0 z-20">
-          <TouchLook />
         </div>
       )}
 

@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { ROOM, DOOR, CINEMA, SEATS } from "@/game/constants";
 import { useGame } from "@/game/store";
 import { VIDEOS } from "@/game/videos";
+import { Spectators } from "./Spectators";
 
 const GLOW = "#2cc3ae";
 const WALL_COLOR = "#14301f";
@@ -415,6 +416,7 @@ export function Cinema() {
       ))}
 
       <Seats />
+      <Spectators />
       <CinemaScreen />
       <CinemaSigns />
       <Doorway />

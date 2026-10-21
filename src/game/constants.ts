@@ -129,3 +129,100 @@ export const SEAT_COLLIDERS: AABB[] = SEATS.map((s) => ({
   minZ: s.z - 0.45,
   maxZ: s.z + 0.45,
 }));
+
+export interface SpectatorConfig {
+  seat: number;
+  shirt: string;
+  hair: string;
+  skin: string;
+  snack: "popcorn" | "drink" | "none";
+}
+
+const seatAt = (row: number, side: -1 | 1, col: number) =>
+  row * SEAT_COLUMNS * 2 + (side === 1 ? SEAT_COLUMNS : 0) + col;
+
+const MAYO_GREEN = "#0a6b2b";
+const MAYO_RED = "#c80000";
+
+// People already watching when you arrive.
+export const SPECTATORS: SpectatorConfig[] = [
+  {
+    seat: seatAt(1, -1, 3),
+    shirt: MAYO_GREEN,
+    hair: "#2a2520",
+    skin: "#e8b896",
+    snack: "popcorn",
+  },
+  {
+    seat: seatAt(1, 1, 5),
+    shirt: "#3b5b92",
+    hair: "#b5651d",
+    skin: "#f1c9a5",
+    snack: "drink",
+  },
+  {
+    seat: seatAt(2, -1, 2),
+    shirt: MAYO_RED,
+    hair: "#7a4a21",
+    skin: "#f1c9a5",
+    snack: "popcorn",
+  },
+  {
+    seat: seatAt(2, -1, 3),
+    shirt: "#e2b33c",
+    hair: "#16130f",
+    skin: "#c68e63",
+    snack: "popcorn",
+  },
+  {
+    seat: seatAt(2, 1, 1),
+    shirt: "#6d4f3a",
+    hair: "#cfcfcf",
+    skin: "#e8b896",
+    snack: "none",
+  },
+  {
+    seat: seatAt(3, -1, 5),
+    shirt: MAYO_GREEN,
+    hair: "#b5651d",
+    skin: "#f1c9a5",
+    snack: "popcorn",
+  },
+  {
+    seat: seatAt(3, 1, 3),
+    shirt: "#0fa391",
+    hair: "#2a2520",
+    skin: "#8d5a3b",
+    snack: "popcorn",
+  },
+  {
+    seat: seatAt(3, 1, 4),
+    shirt: MAYO_RED,
+    hair: "#16130f",
+    skin: "#e8b896",
+    snack: "drink",
+  },
+  {
+    seat: seatAt(4, -1, 1),
+    shirt: "#594033",
+    hair: "#7a4a21",
+    skin: "#e8b896",
+    snack: "none",
+  },
+  {
+    seat: seatAt(4, 1, 6),
+    shirt: MAYO_GREEN,
+    hair: "#2a2520",
+    skin: "#c68e63",
+    snack: "popcorn",
+  },
+  {
+    seat: seatAt(5, -1, 4),
+    shirt: "#a83279",
+    hair: "#cfcfcf",
+    skin: "#f1c9a5",
+    snack: "popcorn",
+  },
+];
+
+export const OCCUPIED_SEATS = new Set(SPECTATORS.map((s) => s.seat));

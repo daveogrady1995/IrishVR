@@ -20,8 +20,13 @@ const MOVE_KEYS = new Set([
 
 export function setupKeyboard() {
   const down = (e: KeyboardEvent) => {
-    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+    if (
+      e.target instanceof HTMLInputElement ||
+      e.target instanceof HTMLTextAreaElement
+    )
+      return;
     const k = e.key.toLowerCase();
+    if (k === "alt" && document.pointerLockElement) document.exitPointerLock();
     if (MOVE_KEYS.has(k)) e.preventDefault();
     input.keys.add(k);
   };

@@ -1,4 +1,4 @@
-import { SEATS } from "./constants";
+import { OCCUPIED_SEATS, SEATS } from "./constants";
 
 const REACH = 2;
 
@@ -13,6 +13,7 @@ export function findNearSeat(
   let best: number | null = null;
   let bestDist = REACH;
   for (let i = 0; i < SEATS.length; i++) {
+    if (OCCUPIED_SEATS.has(i)) continue;
     const dx = SEATS[i].x - px;
     const dz = SEATS[i].z - pz;
     const dist = Math.hypot(dx, dz);
