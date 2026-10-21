@@ -4,6 +4,7 @@ import { ROOM, DOOR, CINEMA, SEATS } from "@/game/constants";
 import { useGame } from "@/game/store";
 import { VIDEOS } from "@/game/videos";
 import { Spectators } from "./Spectators";
+import { Door } from "./Door";
 
 const GLOW = "#2cc3ae";
 const WALL_COLOR = "#14301f";
@@ -22,72 +23,7 @@ function textTexture(
   return tex;
 }
 
-function Doorway() {
-  const { half } = ROOM;
-  const jambX = DOOR.halfWidth + 0.1;
-  return (
-    <group position={[0, 0, -half]}>
-      {[-jambX, jambX].map((x) => (
-        <mesh key={x} position={[x, DOOR.height / 2, 0]} castShadow>
-          <boxGeometry args={[0.2, DOOR.height, 0.4]} />
-          <meshStandardMaterial
-            color="#1a0e05"
-            emissive={GLOW}
-            emissiveIntensity={0.9}
-            roughness={0.4}
-          />
-        </mesh>
-      ))}
-      <mesh position={[0, DOOR.height + 0.1, 0]} castShadow>
-        <boxGeometry args={[DOOR.halfWidth * 2 + 0.4, 0.2, 0.4]} />
-        <meshStandardMaterial
-          color="#1a0e05"
-          emissive={GLOW}
-          emissiveIntensity={0.9}
-          roughness={0.4}
-        />
-      </mesh>
-
-      {/* Double doors, both swung open into the cinema */}
-      {[-1, 1].map((side) => (
-        <group
-          key={side}
-          position={[side * (DOOR.halfWidth - 0.04), 0, -DOOR.halfWidth / 2]}
-        >
-          <mesh
-            position={[0, (DOOR.height - 0.05) / 2, 0]}
-            castShadow
-            receiveShadow
-          >
-            <boxGeometry args={[0.08, DOOR.height - 0.05, DOOR.halfWidth]} />
-            <meshStandardMaterial color="#3b2a1e" roughness={0.55} />
-          </mesh>
-          <mesh
-            position={[-side * 0.07, 1.05, DOOR.halfWidth / 2 - 0.15]}
-            castShadow
-          >
-            <sphereGeometry args={[0.05, 16, 16]} />
-            <meshStandardMaterial
-              color="#d8b25a"
-              metalness={0.8}
-              roughness={0.25}
-            />
-          </mesh>
-        </group>
-      ))}
-
-      <pointLight
-        position={[0, 2.2, -0.8]}
-        intensity={6}
-        distance={8}
-        decay={2}
-        color={GLOW}
-      />
-    </group>
-  );
-}
-
-function CinemaSigns() {
+export function CinemaSigns() {
   const doorSign = useMemo(
     () =>
       textTexture(512, 160, (ctx) => {
@@ -119,6 +55,14 @@ function CinemaSigns() {
         ctx.fillText("↑ CINEMA", 256, 86);
       }),
     [],
+  );
+
+  useEffect(
+    () => () => {
+      doorSign.dispose();
+      postSign.dispose();
+    },
+    [doorSign, postSign],
   );
 
   return (
@@ -224,10 +168,16 @@ function CinemaScreen() {
     return v;
   }, []);
 
-  const videoTexture = useMemo(() => {
+  // Created in an effect: VideoTexture.dispose() cancels its frame callback for good,
+  // so a memoised texture would stay frozen after React StrictMode re-runs effects.
+  const [videoTexture, setVideoTexture] = useState<THREE.VideoTexture | null>(
+    null,
+  );
+  useEffect(() => {
     const t = new THREE.VideoTexture(video);
     t.colorSpace = THREE.SRGBColorSpace;
-    return t;
+    setVideoTexture(t);
+    return () => t.dispose();
   }, [video]);
 
   const idleTexture = useMemo(
@@ -274,8 +224,12 @@ function CinemaScreen() {
       video.removeEventListener("loadedmetadata", onMeta);
       video.removeEventListener("ended", onEnded);
       video.pause();
+      video.removeAttribute("src");
+      video.load();
+      loadedUrl.current = null;
+      idleTexture.dispose();
     };
-  }, [video]);
+  }, [video, idleTexture]);
 
   useEffect(() => {
     const item = VIDEOS[videoIndex];
@@ -317,7 +271,7 @@ function CinemaScreen() {
         <planeGeometry args={[w, h]} />
         <meshBasicMaterial
           key={live ? "video" : "idle"}
-          map={live ? videoTexture : idleTexture}
+          map={live && videoTexture ? videoTexture : idleTexture}
           toneMapped={false}
         />
       </mesh>
@@ -424,8 +378,7 @@ export function Cinema() {
       <Seats />
       <Spectators />
       <CinemaScreen />
-      <CinemaSigns />
-      <Doorway />
+      <Door />
 
       {/* Dim house lights */}
       {[-20, -32].map((z) => (

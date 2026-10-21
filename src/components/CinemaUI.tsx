@@ -15,7 +15,9 @@ function useCinemaKeys() {
       const k = e.key.toLowerCase();
       if (k === "e") {
         if (s.seatId !== null) s.stand();
-        else if (s.nearSeat !== null) s.sit(s.nearSeat);
+        else if (s.nearDoor && !s.listening) {
+          s.travel(s.room === "lounge" ? "cinema" : "lounge");
+        } else if (s.nearSeat !== null) s.sit(s.nearSeat);
       } else if (s.inCinema && !s.listening) {
         if (k === " ") {
           e.preventDefault();
@@ -39,6 +41,10 @@ export function CinemaUI() {
   const seatId = useGame((s) => s.seatId);
   const nearSeat = useGame((s) => s.nearSeat);
   const inCinema = useGame((s) => s.inCinema);
+  const room = useGame((s) => s.room);
+  const nearDoor = useGame((s) => s.nearDoor);
+  const listening = useGame((s) => s.listening);
+  const travel = useGame((s) => s.travel);
   const videoIndex = useGame((s) => s.videoIndex);
   const playing = useGame((s) => s.videoPlaying);
   const sit = useGame((s) => s.sit);
@@ -49,8 +55,25 @@ export function CinemaUI() {
 
   const title = VIDEOS[videoIndex]?.title;
 
+  const destination = room === "lounge" ? "cinema" : "lounge";
+  const destinationLabel = room === "lounge" ? "Cinema" : "Lounge";
+
   return (
     <>
+      {nearDoor && !listening && (
+        <div className="pointer-events-none absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-[120px]">
+          <button
+            onClick={() => travel(destination)}
+            className={`pointer-events-auto animate-floatUp rounded-full px-5 py-3 text-sm font-semibold text-white transition hover:scale-105 active:scale-95 ${panel}`}
+            style={{ backdropFilter: "blur(12px)" }}
+          >
+            {isMobile
+              ? `Tap to go to ${destinationLabel}`
+              : `Press [E] or Tap to go to ${destinationLabel}`}
+          </button>
+        </div>
+      )}
+
       {nearSeat !== null && seatId === null && (
         <div className="pointer-events-none absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-[120px]">
           <button

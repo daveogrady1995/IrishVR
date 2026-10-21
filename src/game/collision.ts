@@ -8,12 +8,16 @@ import {
   WORLD_MAX_Z,
   type AABB,
 } from "./constants";
+import type { RoomId } from "./types";
 
 const MARGIN = PLAYER.radius + 0.15;
 const BOUND_X = CINEMA.halfWidth - MARGIN;
 const MIN_Z = WORLD_MIN_Z + MARGIN;
 const MAX_Z = WORLD_MAX_Z - MARGIN;
-const COLLIDERS: AABB[] = [...WALLS, ...OBSTACLES, ...SEAT_COLLIDERS];
+const COLLIDERS: Record<RoomId, AABB[]> = {
+  lounge: [...WALLS, ...OBSTACLES],
+  cinema: [...WALLS, ...SEAT_COLLIDERS],
+};
 
 function closestOnAABB(px: number, pz: number, box: AABB) {
   const cx = Math.max(box.minX, Math.min(px, box.maxX));
@@ -24,6 +28,7 @@ function closestOnAABB(px: number, pz: number, box: AABB) {
 export function resolveCollision(
   px: number,
   pz: number,
+  room: RoomId,
   radius = PLAYER.radius,
 ): [number, number] {
   let x = px;
@@ -32,7 +37,7 @@ export function resolveCollision(
   x = Math.max(-BOUND_X, Math.min(BOUND_X, x));
   z = Math.max(MIN_Z, Math.min(MAX_Z, z));
 
-  for (const box of COLLIDERS) {
+  for (const box of COLLIDERS[room]) {
     const { cx, cz } = closestOnAABB(x, z, box);
     const dx = x - cx;
     const dz = z - cz;

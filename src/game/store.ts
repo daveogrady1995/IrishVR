@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { CameraMode } from "./types";
+import type { CameraMode, RoomId } from "./types";
 import { VIDEOS } from "./videos";
 
 interface GameState {
@@ -13,11 +13,14 @@ interface GameState {
   seatId: number | null;
   nearSeat: number | null;
   inCinema: boolean;
+  room: RoomId;
+  nearDoor: boolean;
   videoIndex: number;
   videoPlaying: boolean;
   videoStarted: boolean;
   setNearSeat: (id: number | null) => void;
-  setInCinema: (v: boolean) => void;
+  setNearDoor: (v: boolean) => void;
+  travel: (room: RoomId) => void;
   sit: (id: number) => void;
   stand: () => void;
   togglePlay: () => void;
@@ -46,23 +49,36 @@ export const useGame = create<GameState>((set, get) => ({
   seatId: null,
   nearSeat: null,
   inCinema: false,
+  room: "lounge",
+  nearDoor: false,
   videoIndex: 0,
   videoPlaying: false,
   videoStarted: false,
   setNearSeat: (id) => {
     if (get().nearSeat !== id) set({ nearSeat: id });
   },
-  setInCinema: (v) => {
-    if (get().inCinema === v) return;
-    if (v && !get().videoStarted && VIDEOS.length > 0) {
+  setNearDoor: (v) => {
+    if (get().nearDoor !== v) set({ nearDoor: v });
+  },
+  travel: (room) => {
+    if (get().room === room) return;
+    const base = {
+      room,
+      inCinema: room === "cinema",
+      nearDoor: false,
+      nearSeat: null,
+      seatId: null,
+      nearby: false,
+    };
+    if (room === "cinema" && !get().videoStarted && VIDEOS.length > 0) {
       set({
-        inCinema: true,
+        ...base,
         videoStarted: true,
         videoPlaying: true,
         videoIndex: Math.floor(Math.random() * VIDEOS.length),
       });
     } else {
-      set({ inCinema: v });
+      set(base);
     }
   },
   sit: (id) => set({ seatId: id, nearSeat: null, cameraMode: "walk" }),

@@ -14,6 +14,9 @@ export const PLAYER = {
 
 export const PROXIMITY_DISTANCE = 3.5;
 
+// How close to the door (along z) and how central (along x) the player must be to use it.
+export const DOOR_REACH = { z: 1.8, x: 2.2 };
+
 export const NPC_CENTER = new Vector3(0, 0, 0);
 
 export const NPC_A_POS: [number, number, number] = [-1.7, 0, 0];
@@ -73,19 +76,8 @@ export const WALLS: AABB[] = [
   { minX: CW - T, maxX: CW + T, minZ: WORLD_MIN_Z - T, maxZ: -H },
   // cinema back wall
   { minX: -CW - T, maxX: CW + T, minZ: WORLD_MIN_Z - T, maxZ: WORLD_MIN_Z + T },
-  // open door leaves, swung into the cinema
-  {
-    minX: -DOOR.halfWidth - 0.05,
-    maxX: -DOOR.halfWidth + 0.05,
-    minZ: -H - DOOR.halfWidth,
-    maxZ: -H,
-  },
-  {
-    minX: DOOR.halfWidth - 0.05,
-    maxX: DOOR.halfWidth + 0.05,
-    minZ: -H - DOOR.halfWidth,
-    maxZ: -H,
-  },
+  // closed door filling the doorway
+  { minX: -DOOR.halfWidth, maxX: DOOR.halfWidth, minZ: -H - T, maxZ: -H + T },
 ];
 
 export const OBSTACLES: AABB[] = [

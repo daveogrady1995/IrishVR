@@ -4,15 +4,22 @@ import * as THREE from "three";
 import { Character } from "./Character";
 import { getMoveVector, input } from "@/game/input";
 import { resolveCollision } from "@/game/collision";
-import { PLAYER, CAMERA, ROOM, SEATS } from "@/game/constants";
+import { PLAYER, CAMERA, ROOM, SEATS, DOOR_REACH } from "@/game/constants";
 import { useGame } from "@/game/store";
 import { findNearSeat } from "@/game/seats";
 import { publishPosition } from "@/game/multiplayer";
 
 const _look = new THREE.Vector3();
 const _cinematicPos = new THREE.Vector3();
+const _cinematicTarget = new THREE.Vector3();
 const EYE_HEIGHT = 1.65;
 const SEATED_EYE_HEIGHT = 1.25;
+// Where the player arrives after using the door, facing into the new room.
+const ARRIVAL = {
+  lounge: { x: 0, z: -ROOM.half + 2.4, yaw: Math.PI },
+  cinema: { x: 0, z: -ROOM.half - 2.4, yaw: 0 },
+} as const;
+
 // Corridor between seat rows, in front of the seat.
 const STAND_OFFSET_Z = -1.2;
 
@@ -21,6 +28,7 @@ export function Player() {
   const facing = useRef(0);
   const eye = useRef(EYE_HEIGHT);
   const prevSeat = useRef<number | null>(null);
+  const currentRoom = useRef(useGame.getState().room);
   const { camera, gl } = useThree();
   const cameraMode = useGame((s) => s.cameraMode);
   const camMode = useRef(cameraMode);
@@ -46,6 +54,15 @@ export function Player() {
     const mv = getMoveVector();
     const moving = mv.x !== 0 || mv.y !== 0;
     const store = useGame.getState();
+    const room = store.room;
+    if (currentRoom.current !== room) {
+      currentRoom.current = room;
+      const a = ARRIVAL[room];
+      g.position.set(a.x, g.position.y, a.z);
+      input.cameraYaw = a.yaw;
+      input.cameraPitch = 0;
+      prevSeat.current = null;
+    }
     const seatId = store.seatId;
 
     if (seatId !== null) {
@@ -70,17 +87,19 @@ export function Player() {
         const dist = PLAYER.speed * dt;
         const nx = g.position.x + mv.x * dist;
         const nz = g.position.z + mv.y * dist;
-        const [rx, rz] = resolveCollision(nx, nz);
+        const [rx, rz] = resolveCollision(nx, nz, room);
         g.position.x = rx;
         g.position.z = rz;
       }
     }
     prevSeat.current = seatId;
 
-    const inCinema = g.position.z < -ROOM.half;
-    store.setInCinema(inCinema);
+    const nearDoor =
+      Math.abs(g.position.x) < DOOR_REACH.x &&
+      Math.abs(g.position.z + ROOM.half) < DOOR_REACH.z;
+    store.setNearDoor(nearDoor && seatId === null);
     store.setNearSeat(
-      inCinema && seatId === null
+      room === "cinema" && seatId === null
         ? findNearSeat(g.position.x, g.position.z, input.cameraYaw)
         : null,
     );
@@ -112,16 +131,28 @@ export function Player() {
       }
       g.rotation.y = facing.current;
 
-      _cinematicPos.copy(CAMERA.cinematicPos);
+      if (room === "cinema") {
+        // The lounge-anchored camera spot is meaningless here, so follow the player.
+        _cinematicPos.set(g.position.x + 3, 2.7, g.position.z + 5);
+        _cinematicTarget.set(g.position.x, 1.25, g.position.z);
+      } else {
+        _cinematicPos.copy(CAMERA.cinematicPos);
+        _cinematicTarget.copy(CAMERA.cinematicTarget);
+      }
       camera.position.lerp(
         _cinematicPos,
         Math.min(1, dt * CAMERA.smooth * 0.8),
       );
-      camera.lookAt(CAMERA.cinematicTarget);
+      camera.lookAt(_cinematicTarget);
     }
 
     // +PI because character body faces opposite to camera direction
-    publishPosition(g.position.x, g.position.z, facing.current + Math.PI);
+    publishPosition(
+      g.position.x,
+      g.position.z,
+      facing.current + Math.PI,
+      room,
+    );
   });
 
   return (

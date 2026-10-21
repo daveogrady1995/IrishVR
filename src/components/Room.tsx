@@ -1,8 +1,10 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { useTexture } from "@react-three/drei";
 import { ROOM, DOOR } from "@/game/constants";
 import { SamMaguireCup } from "./SamMaguireCup";
+import { Door } from "./Door";
+import { CinemaSigns } from "./Cinema";
 
 function Wall({
   args,
@@ -127,8 +129,6 @@ function FloorLamp({ position }: { position: [number, number, number] }) {
         distance={9}
         decay={2}
         color="#ffbf4a"
-        castShadow
-        shadow-mapSize={[512, 512]}
       />
     </group>
   );
@@ -260,6 +260,7 @@ function PhotoPoster({
   height?: number;
 }) {
   const texture = useTexture(url);
+  useEffect(() => () => texture.dispose(), [texture]);
   return (
     <PosterFrame
       position={position}
@@ -315,6 +316,7 @@ function CurseIsBrokenPoster({
     ctx.fillText("All-Ireland Final • Croke Park", 256, 632);
     return new THREE.CanvasTexture(c);
   }, []);
+  useEffect(() => () => texture.dispose(), [texture]);
   return (
     <PosterFrame
       position={position}
@@ -368,6 +370,7 @@ function MayoBannerPoster({
     ctx.fillText("★ ★ ★ ★ ★ ★", 384, 420);
     return new THREE.CanvasTexture(c);
   }, []);
+  useEffect(() => () => texture.dispose(), [texture]);
   return (
     <PosterFrame
       position={position}
@@ -393,7 +396,7 @@ export function Room() {
         <meshStandardMaterial color="#d0bd9f" roughness={0.9} />
       </mesh>
 
-      {/* Walls — back wall has a doorway into the blank room */}
+      {/* Walls — back wall has a doorway fitted with a door to the cinema */}
       <Wall
         args={[half - DOOR.halfWidth, wallHeight, wallThickness]}
         position={[-(half + DOOR.halfWidth) / 2, wallHeight / 2, -half]}
@@ -431,6 +434,8 @@ export function Room() {
         <meshStandardMaterial color="#f2ece1" roughness={1} />
       </mesh>
 
+      <Door />
+      <CinemaSigns />
       <Rug />
       <CoffeeTable />
       <Sofa position={[0, 0, 8]} rotation={Math.PI} color="#783c0e" />

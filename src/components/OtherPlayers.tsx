@@ -4,6 +4,7 @@ import { Html } from "@react-three/drei";
 import * as THREE from "three";
 import { Character } from "./Character";
 import { useOtherPlayers, type RemotePlayer } from "@/game/multiplayer";
+import { useGame } from "@/game/store";
 
 function OtherPlayer({ target }: { target: RemotePlayer }) {
   const groupRef = useRef<THREE.Group>(null);
@@ -83,9 +84,10 @@ function OtherPlayer({ target }: { target: RemotePlayer }) {
 
 export function OtherPlayers() {
   const others = useOtherPlayers();
+  const room = useGame((s) => s.room);
   return (
     <>
-      {others.map((p) => (
+      {others.filter((p) => p.room === room).map((p) => (
         <OtherPlayer key={p.id} target={p} />
       ))}
     </>

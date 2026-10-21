@@ -1,6 +1,7 @@
 import { ref, set, update, onValue, onDisconnect, push } from "firebase/database";
 import { useEffect, useState } from "react";
 import { db } from "@/firebase";
+import type { RoomId } from "./types";
 
 export const playerId = (() => {
   let id = sessionStorage.getItem("vr-player-id");
@@ -20,6 +21,7 @@ export interface RemotePlayer {
   x: number;
   z: number;
   rotY: number;
+  room: RoomId;
   name: string;
   message?: string;
   messageTime?: number;
@@ -34,10 +36,10 @@ export interface ChatMessage {
 
 let lastPublish = 0;
 
-export function publishPosition(x: number, z: number, rotY: number) {
+export function publishPosition(x: number, z: number, rotY: number, room: RoomId) {
   if (Date.now() - lastPublish < 100) return;
   lastPublish = Date.now();
-  update(ref(db, `players/${playerId}`), { x, z, rotY, t: Date.now(), name: getPlayerName() });
+  update(ref(db, `players/${playerId}`), { x, z, rotY, room, t: Date.now(), name: getPlayerName() });
 }
 
 export function sendChatMessage(text: string) {
@@ -59,7 +61,7 @@ export function useOtherPlayers(): RemotePlayer[] {
     const allRef = ref(db, "players");
     const unsub = onValue(allRef, (snap) => {
       const data = snap.val() as Record<string, {
-        x: number; z: number; rotY: number; t: number;
+        x: number; z: number; rotY: number; room?: RoomId; t: number;
         name?: string; message?: string; messageTime?: number;
       }> | null;
       if (!data) { setOthers([]); return; }
@@ -68,7 +70,7 @@ export function useOtherPlayers(): RemotePlayer[] {
         Object.entries(data)
           .filter(([id, p]) => id !== playerId && now - (p.t ?? 0) < 15000)
           .map(([id, p]) => ({
-            id, x: p.x, z: p.z, rotY: p.rotY,
+            id, x: p.x, z: p.z, rotY: p.rotY, room: p.room ?? "lounge",
             name: p.name || `Player_${id.slice(0, 4)}`,
             message: p.message,
             messageTime: p.messageTime,

@@ -2,26 +2,25 @@ import { Suspense, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { ContactShadows } from "@react-three/drei";
 import * as THREE from "three";
-import { ROOM } from "@/game/constants";
+import { useGame } from "@/game/store";
 import { Room } from "./Room";
 import { Cinema } from "./Cinema";
 import { Player } from "./Player";
 import { NPCs } from "./NPCs";
 import { OtherPlayers } from "./OtherPlayers";
 
-// Global lights fade down as the player walks through the cinema doorway.
+// Global lights dim while in the cinema.
 function Lights() {
   const ambient = useRef<THREE.AmbientLight>(null);
   const hemi = useRef<THREE.HemisphereLight>(null);
   const key = useRef<THREE.DirectionalLight>(null);
   const rim = useRef<THREE.DirectionalLight>(null);
-  const player = useRef<THREE.Object3D | null>(null);
+  const level = useRef(1);
 
-  useFrame(({ scene }) => {
-    player.current ??= scene.getObjectByName("player-group") ?? null;
-    const z = player.current?.position.z ?? 0;
-    const t = THREE.MathUtils.smoothstep(-ROOM.half - z + 1, 0, 4);
-    const k = 1 - 0.92 * t;
+  useFrame((_, delta) => {
+    const target = useGame.getState().room === "cinema" ? 0.08 : 1;
+    level.current = THREE.MathUtils.damp(level.current, target, 8, delta);
+    const k = level.current;
     if (ambient.current) ambient.current.intensity = 0.45 * k;
     if (hemi.current) hemi.current.intensity = 0.4 * k;
     if (key.current) key.current.intensity = 1.6 * k;
@@ -41,7 +40,7 @@ function Lights() {
         intensity={1.6}
         color="#fff0d4"
         castShadow
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={[1024, 1024]}
         shadow-bias={-0.0004}
         shadow-normalBias={0.02}
       >
@@ -62,10 +61,11 @@ function Lights() {
 }
 
 export function Scene() {
+  const room = useGame((s) => s.room);
   return (
     <Canvas
       shadows
-      dpr={[1, 2]}
+      dpr={[1, 1.5]}
       camera={{ position: [0, 1.65, 6], fov: 75, near: 0.1, far: 100 }}
       gl={{ antialias: true, powerPreference: "high-performance" }}
       style={{ position: "absolute", inset: 0 }}
@@ -76,27 +76,33 @@ export function Scene() {
       <Lights />
 
       <Suspense fallback={null}>
-        <Room />
-        <Cinema />
+        {/* Only the current room is mounted so the other one's geometry, textures and video are freed. */}
+        {room === "lounge" ? (
+          <>
+            <Room />
+            <NPCs />
+            <ContactShadows
+              position={[0, 0.01, 0]}
+              opacity={0.35}
+              scale={24}
+              blur={2.4}
+              far={6}
+              resolution={512}
+              frames={1}
+              color="#1a1208"
+            />
+            <pointLight
+              position={[0, 3.5, 0]}
+              intensity={0.3}
+              distance={20}
+              color="#fff0d4"
+            />
+          </>
+        ) : (
+          <Cinema />
+        )}
         <Player />
-        <NPCs />
         <OtherPlayers />
-        <ContactShadows
-          position={[0, 0.01, 0]}
-          opacity={0.35}
-          scale={24}
-          blur={2.4}
-          far={6}
-          resolution={512}
-          color="#1a1208"
-        />
-        {/* Subtle warm fill from all directions using a low-cost light rig */}
-        <pointLight
-          position={[0, 3.5, 0]}
-          intensity={0.3}
-          distance={20}
-          color="#fff0d4"
-        />
       </Suspense>
     </Canvas>
   );
