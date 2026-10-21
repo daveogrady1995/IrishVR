@@ -4,17 +4,23 @@ import * as THREE from "three";
 import { Character } from "./Character";
 import { getMoveVector, input } from "@/game/input";
 import { resolveCollision } from "@/game/collision";
-import { PLAYER, CAMERA } from "@/game/constants";
+import { PLAYER, CAMERA, ROOM, SEATS } from "@/game/constants";
 import { useGame } from "@/game/store";
+import { findNearSeat } from "@/game/seats";
 import { publishPosition } from "@/game/multiplayer";
 
 const _look = new THREE.Vector3();
 const _cinematicPos = new THREE.Vector3();
 const EYE_HEIGHT = 1.65;
+const SEATED_EYE_HEIGHT = 1.25;
+// Corridor between seat rows, in front of the seat.
+const STAND_OFFSET_Z = -1.2;
 
 export function Player() {
   const group = useRef<THREE.Group>(null);
   const facing = useRef(0);
+  const eye = useRef(EYE_HEIGHT);
+  const prevSeat = useRef<number | null>(null);
   const { camera, gl } = useThree();
   const cameraMode = useGame((s) => s.cameraMode);
   const camMode = useRef(cameraMode);
@@ -39,29 +45,59 @@ export function Player() {
 
     const mv = getMoveVector();
     const moving = mv.x !== 0 || mv.y !== 0;
+    const store = useGame.getState();
+    const seatId = store.seatId;
 
-    if (moving) {
-      const dist = PLAYER.speed * dt;
-      const nx = g.position.x + mv.x * dist;
-      const nz = g.position.z + mv.y * dist;
-      const [rx, rz] = resolveCollision(nx, nz);
-      g.position.x = rx;
-      g.position.z = rz;
+    if (seatId !== null) {
+      const seat = SEATS[seatId];
+      if (moving) store.stand();
+      const k = Math.min(1, dt * 8);
+      g.position.x += (seat.x - g.position.x) * k;
+      g.position.z += (seat.z - g.position.z) * k;
+      eye.current += (SEATED_EYE_HEIGHT - eye.current) * k;
+      if (prevSeat.current === null) {
+        input.cameraYaw = 0;
+        input.cameraPitch = 0.3;
+      }
+    } else {
+      if (prevSeat.current !== null) {
+        const seat = SEATS[prevSeat.current];
+        g.position.set(seat.x, g.position.y, seat.z + STAND_OFFSET_Z);
+      }
+      eye.current += (EYE_HEIGHT - eye.current) * Math.min(1, dt * 8);
+
+      if (moving) {
+        const dist = PLAYER.speed * dt;
+        const nx = g.position.x + mv.x * dist;
+        const nz = g.position.z + mv.y * dist;
+        const [rx, rz] = resolveCollision(nx, nz);
+        g.position.x = rx;
+        g.position.z = rz;
+      }
     }
+    prevSeat.current = seatId;
 
-    if (camMode.current === "walk") {
+    const inCinema = g.position.z < -ROOM.half;
+    store.setInCinema(inCinema);
+    store.setNearSeat(
+      inCinema && seatId === null
+        ? findNearSeat(g.position.x, g.position.z, input.cameraYaw)
+        : null,
+    );
+
+    if (camMode.current === "walk" || seatId !== null) {
       // First-person: body faces camera yaw, camera snaps to eye position
       facing.current = input.cameraYaw;
       g.rotation.y = facing.current;
 
       camera.position.set(
         g.position.x,
-        g.position.y + EYE_HEIGHT,
+        g.position.y + eye.current,
         g.position.z,
       );
       _look.set(
         g.position.x - Math.sin(input.cameraYaw) * Math.cos(input.cameraPitch),
-        g.position.y + EYE_HEIGHT + Math.sin(input.cameraPitch),
+        g.position.y + eye.current + Math.sin(input.cameraPitch),
         g.position.z - Math.cos(input.cameraYaw) * Math.cos(input.cameraPitch),
       );
       camera.lookAt(_look);

@@ -6,6 +6,7 @@ import { DialogueOverlay } from "@/components/DialogueOverlay";
 import { ProximityPrompt } from "@/components/ProximityPrompt";
 import { NamePrompt } from "@/components/NamePrompt";
 import { ChatOverlay } from "@/components/ChatOverlay";
+import { CinemaUI } from "@/components/CinemaUI";
 import { useGame } from "@/game/store";
 import { setupKeyboard, setupMouseDrag, input } from "@/game/input";
 
@@ -94,7 +95,9 @@ export default function App() {
   useListenKey();
   const isMobile = useGame((s) => s.isMobile);
   const listening = useGame((s) => s.listening);
-  const [hasName, setHasName] = useState(() => !!sessionStorage.getItem("vr-player-name"));
+  const [hasName, setHasName] = useState(
+    () => !!sessionStorage.getItem("vr-player-name"),
+  );
 
   useEffect(() => {
     const kb = setupKeyboard();
@@ -113,6 +116,7 @@ export default function App() {
       <div className="pointer-events-none absolute inset-0 z-10 select-none">
         <HUD />
         <ProximityPrompt />
+        <CinemaUI />
         <DialogueOverlay />
       </div>
 

@@ -1,6 +1,19 @@
-import { OBSTACLES, ROOM, PLAYER, type AABB } from './constants';
+import {
+  OBSTACLES,
+  SEAT_COLLIDERS,
+  WALLS,
+  CINEMA,
+  PLAYER,
+  WORLD_MIN_Z,
+  WORLD_MAX_Z,
+  type AABB,
+} from "./constants";
 
-const BOUND = ROOM.half - PLAYER.radius - 0.15;
+const MARGIN = PLAYER.radius + 0.15;
+const BOUND_X = CINEMA.halfWidth - MARGIN;
+const MIN_Z = WORLD_MIN_Z + MARGIN;
+const MAX_Z = WORLD_MAX_Z - MARGIN;
+const COLLIDERS: AABB[] = [...WALLS, ...OBSTACLES, ...SEAT_COLLIDERS];
 
 function closestOnAABB(px: number, pz: number, box: AABB) {
   const cx = Math.max(box.minX, Math.min(px, box.maxX));
@@ -16,10 +29,10 @@ export function resolveCollision(
   let x = px;
   let z = pz;
 
-  x = Math.max(-BOUND, Math.min(BOUND, x));
-  z = Math.max(-BOUND, Math.min(BOUND, z));
+  x = Math.max(-BOUND_X, Math.min(BOUND_X, x));
+  z = Math.max(MIN_Z, Math.min(MAX_Z, z));
 
-  for (const box of OBSTACLES) {
+  for (const box of COLLIDERS) {
     const { cx, cz } = closestOnAABB(x, z, box);
     const dx = x - cx;
     const dz = z - cz;
@@ -36,7 +49,7 @@ export function resolveCollision(
     }
   }
 
-  x = Math.max(-BOUND, Math.min(BOUND, x));
-  z = Math.max(-BOUND, Math.min(BOUND, z));
+  x = Math.max(-BOUND_X, Math.min(BOUND_X, x));
+  z = Math.max(MIN_Z, Math.min(MAX_Z, z));
   return [x, z];
 }

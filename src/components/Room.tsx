@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import * as THREE from "three";
 import { useTexture } from "@react-three/drei";
-import { ROOM } from "@/game/constants";
+import { ROOM, DOOR } from "@/game/constants";
 import { SamMaguireCup } from "./SamMaguireCup";
 
 function Wall({
@@ -393,10 +393,18 @@ export function Room() {
         <meshStandardMaterial color="#d0bd9f" roughness={0.9} />
       </mesh>
 
-      {/* Walls */}
+      {/* Walls — back wall has a doorway into the blank room */}
       <Wall
-        args={[half * 2, wallHeight, wallThickness]}
-        position={[0, wallHeight / 2, -half]}
+        args={[half - DOOR.halfWidth, wallHeight, wallThickness]}
+        position={[-(half + DOOR.halfWidth) / 2, wallHeight / 2, -half]}
+      />
+      <Wall
+        args={[half - DOOR.halfWidth, wallHeight, wallThickness]}
+        position={[(half + DOOR.halfWidth) / 2, wallHeight / 2, -half]}
+      />
+      <Wall
+        args={[DOOR.halfWidth * 2, wallHeight - DOOR.height, wallThickness]}
+        position={[0, DOOR.height + (wallHeight - DOOR.height) / 2, -half]}
       />
       <Wall
         args={[half * 2, wallHeight, wallThickness]}
