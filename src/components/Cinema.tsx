@@ -249,7 +249,7 @@ function CinemaScreen() {
         ctx.font = "36px Arial";
         ctx.fillText(
           VIDEOS.length
-            ? "Take a seat and press [E] to start the show"
+            ? "Take a seat and enjoy the show"
             : "Add videos to src/assets/videos to get started",
           512,
           400,
@@ -265,7 +265,7 @@ function CinemaScreen() {
         setAspect(video.videoWidth / video.videoHeight);
       }
     };
-    const onEnded = () => useGame.getState().nextVideo();
+    const onEnded = () => useGame.getState().randomVideo();
     video.addEventListener("playing", onPlaying);
     video.addEventListener("loadedmetadata", onMeta);
     video.addEventListener("ended", onEnded);
@@ -285,8 +285,14 @@ function CinemaScreen() {
       video.src = item.url;
       video.load();
     }
-    if (playing) video.play().catch(() => {});
-    else video.pause();
+    if (playing) {
+      // Browsers may block autoplay until the user has interacted with the page.
+      video.play().catch((err) => {
+        if (err?.name === "NotAllowedError") {
+          useGame.setState({ videoPlaying: false });
+        }
+      });
+    } else video.pause();
   }, [video, videoIndex, playing]);
 
   useEffect(() => {

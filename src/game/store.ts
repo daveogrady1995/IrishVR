@@ -15,6 +15,7 @@ interface GameState {
   inCinema: boolean;
   videoIndex: number;
   videoPlaying: boolean;
+  videoStarted: boolean;
   setNearSeat: (id: number | null) => void;
   setInCinema: (v: boolean) => void;
   sit: (id: number) => void;
@@ -22,6 +23,7 @@ interface GameState {
   togglePlay: () => void;
   nextVideo: () => void;
   prevVideo: () => void;
+  randomVideo: () => void;
   setNearby: (v: boolean) => void;
   startListening: () => void;
   stopListening: () => void;
@@ -46,19 +48,24 @@ export const useGame = create<GameState>((set, get) => ({
   inCinema: false,
   videoIndex: 0,
   videoPlaying: false,
+  videoStarted: false,
   setNearSeat: (id) => {
     if (get().nearSeat !== id) set({ nearSeat: id });
   },
   setInCinema: (v) => {
-    if (get().inCinema !== v) set({ inCinema: v });
+    if (get().inCinema === v) return;
+    if (v && !get().videoStarted && VIDEOS.length > 0) {
+      set({
+        inCinema: true,
+        videoStarted: true,
+        videoPlaying: true,
+        videoIndex: Math.floor(Math.random() * VIDEOS.length),
+      });
+    } else {
+      set({ inCinema: v });
+    }
   },
-  sit: (id) =>
-    set({
-      seatId: id,
-      nearSeat: null,
-      cameraMode: "walk",
-      videoPlaying: VIDEOS.length > 0,
-    }),
+  sit: (id) => set({ seatId: id, nearSeat: null, cameraMode: "walk" }),
   stand: () => set({ seatId: null }),
   togglePlay: () =>
     set((s) => ({ videoPlaying: VIDEOS.length > 0 && !s.videoPlaying })),
@@ -74,6 +81,16 @@ export const useGame = create<GameState>((set, get) => ({
         : 0,
       videoPlaying: VIDEOS.length > 0,
     })),
+  randomVideo: () =>
+    set((s) => {
+      if (VIDEOS.length < 2) return { videoPlaying: VIDEOS.length > 0 };
+      // Offset by 1..n-1 so the same video never repeats back to back.
+      const offset = 1 + Math.floor(Math.random() * (VIDEOS.length - 1));
+      return {
+        videoIndex: (s.videoIndex + offset) % VIDEOS.length,
+        videoPlaying: true,
+      };
+    }),
   setNearby: (v) => {
     if (get().nearby !== v) set({ nearby: v });
   },

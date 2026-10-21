@@ -64,7 +64,7 @@ export function CinemaUI() {
       )}
 
       {inCinema && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-6 z-20 flex justify-center">
+        <div className="pointer-events-none absolute inset-x-0 top-[4.5rem] z-20 flex justify-center sm:top-4">
           <div
             className={`flex items-center gap-3 rounded-2xl px-4 py-3 ${panel}`}
             style={{ backdropFilter: "blur(12px)" }}
@@ -94,7 +94,7 @@ export function CinemaUI() {
             >
               <SkipForward className="h-4 w-4" />
             </button>
-            <div className="min-w-0 max-w-[16rem] px-1">
+            <div className="min-w-0 max-w-[9rem] px-1 sm:max-w-[16rem]">
               <p className="truncate text-sm font-semibold text-white">
                 {title ?? "No videos found"}
               </p>
