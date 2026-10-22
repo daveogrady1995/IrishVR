@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import { useGame } from "@/game/store";
 import { VIDEOS } from "@/game/videos";
-import { SubtitleButton, cycleSubtitleMode } from "./Subtitles";
 
 function useCinemaKeys() {
   useEffect(() => {
@@ -25,7 +24,6 @@ function useCinemaKeys() {
           s.togglePlay();
         } else if (k === "n") s.nextVideo();
         else if (k === "b") s.prevVideo();
-        else if (k === "c") cycleSubtitleMode();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -56,7 +54,6 @@ export function CinemaUI() {
   const prevVideo = useGame((s) => s.prevVideo);
 
   const title = VIDEOS[videoIndex]?.title;
-  const credit = VIDEOS[videoIndex]?.credit;
 
   const destination = room === "lounge" ? "cinema" : "lounge";
   const destinationLabel = room === "lounge" ? "Cinema" : "Lounge";
@@ -120,9 +117,6 @@ export function CinemaUI() {
             >
               <SkipForward className="h-4 w-4" />
             </button>
-            <SubtitleButton
-              className={`${iconButton} w-auto px-3`}
-            />
             <div className="min-w-0 max-w-[9rem] px-1 sm:max-w-[16rem]">
               <p className="truncate text-sm font-semibold text-white">
                 {title ?? "No videos found"}
@@ -134,16 +128,6 @@ export function CinemaUI() {
                     : `${videoIndex + 1} of ${VIDEOS.length}  ·  Space pause  ·  N next  ·  B back`
                   : "Add files to src/assets/videos"}
               </p>
-              {credit && (
-                <a
-                  href={credit.sourceUrl}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="pointer-events-auto block truncate text-[10px] leading-tight text-white/40 underline-offset-2 hover:text-white/70 hover:underline"
-                >
-                  {credit.author} · {credit.license}
-                </a>
-              )}
             </div>
             {seatId !== null && (
               <button

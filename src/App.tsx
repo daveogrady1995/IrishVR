@@ -7,7 +7,6 @@ import { ProximityPrompt } from "@/components/ProximityPrompt";
 import { NamePrompt } from "@/components/NamePrompt";
 import { ChatOverlay } from "@/components/ChatOverlay";
 import { CinemaUI } from "@/components/CinemaUI";
-import { Subtitles } from "@/components/Subtitles";
 import { CursorHint } from "@/components/CursorHint";
 import { useGame } from "@/game/store";
 import { setupKeyboard, setupMouseDrag, input } from "@/game/input";
@@ -119,7 +118,6 @@ export default function App() {
         <HUD />
         <ProximityPrompt />
         <CinemaUI />
-        <Subtitles />
         <CursorHint />
         <DialogueOverlay />
       </div>

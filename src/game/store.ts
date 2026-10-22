@@ -2,8 +2,6 @@ import { create } from "zustand";
 import type { CameraMode, RoomId } from "./types";
 import { VIDEOS } from "./videos";
 
-export type SubtitleMode = "both" | "ga" | "en" | "off";
-
 interface GameState {
   nearby: boolean;
   listening: boolean;
@@ -20,8 +18,6 @@ interface GameState {
   videoIndex: number;
   videoPlaying: boolean;
   videoStarted: boolean;
-  subtitleMode: SubtitleMode;
-  setSubtitleMode: (m: SubtitleMode) => void;
   setNearSeat: (id: number | null) => void;
   setNearDoor: (v: boolean) => void;
   travel: (room: RoomId) => void;
@@ -58,8 +54,6 @@ export const useGame = create<GameState>((set, get) => ({
   videoIndex: 0,
   videoPlaying: false,
   videoStarted: false,
-  subtitleMode: "both",
-  setSubtitleMode: (m) => set({ subtitleMode: m }),
   setNearSeat: (id) => {
     if (get().nearSeat !== id) set({ nearSeat: id });
   },
@@ -81,7 +75,7 @@ export const useGame = create<GameState>((set, get) => ({
         ...base,
         videoStarted: true,
         videoPlaying: true,
-        videoIndex: 0,
+        videoIndex: Math.floor(Math.random() * VIDEOS.length),
       });
     } else {
       set(base);
