@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { ROOM, DOOR, CINEMA, SEATS } from "@/game/constants";
 import { useGame } from "@/game/store";
 import { VIDEOS } from "@/game/videos";
+import { cinemaVideo } from "@/game/videoElement";
 import { Spectators } from "./Spectators";
 import { Door } from "./Door";
 
@@ -215,11 +216,13 @@ function CinemaScreen() {
         setAspect(video.videoWidth / video.videoHeight);
       }
     };
-    const onEnded = () => useGame.getState().randomVideo();
+    const onEnded = () => useGame.getState().nextVideo();
+    cinemaVideo.el = video;
     video.addEventListener("playing", onPlaying);
     video.addEventListener("loadedmetadata", onMeta);
     video.addEventListener("ended", onEnded);
     return () => {
+      if (cinemaVideo.el === video) cinemaVideo.el = null;
       video.removeEventListener("playing", onPlaying);
       video.removeEventListener("loadedmetadata", onMeta);
       video.removeEventListener("ended", onEnded);
