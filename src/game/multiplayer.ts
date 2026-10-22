@@ -1,19 +1,25 @@
 import { ref, set, update, onValue, onDisconnect, push } from "firebase/database";
 import { useEffect, useState } from "react";
-import { db } from "@/firebase";
+import { auth, authReady, db } from "@/firebase";
 import type { RoomId } from "./types";
 
-export const playerId = (() => {
-  let id = sessionStorage.getItem("vr-player-id");
-  if (!id) {
-    id = Math.random().toString(36).slice(2, 10);
-    sessionStorage.setItem("vr-player-id", id);
+// The player's id is the anonymous Firebase uid, which the database rules check against.
+export function getPlayerId(): string | null {
+  return auth.currentUser?.uid ?? null;
+}
+
+// Short random tag used only for default display names.
+export const playerTag = (() => {
+  let tag = sessionStorage.getItem("vr-player-tag");
+  if (!tag) {
+    tag = Math.random().toString(36).slice(2, 6);
+    sessionStorage.setItem("vr-player-tag", tag);
   }
-  return id;
+  return tag;
 })();
 
 export function getPlayerName(): string {
-  return sessionStorage.getItem("vr-player-name") || `Player_${playerId.slice(0, 4)}`;
+  return sessionStorage.getItem("vr-player-name") || `Player_${playerTag}`;
 }
 
 export interface RemotePlayer {
@@ -37,15 +43,19 @@ export interface ChatMessage {
 let lastPublish = 0;
 
 export function publishPosition(x: number, z: number, rotY: number, room: RoomId) {
-  if (Date.now() - lastPublish < 100) return;
+  const playerId = getPlayerId();
+  if (!playerId || Date.now() - lastPublish < 100) return;
   lastPublish = Date.now();
   update(ref(db, `players/${playerId}`), { x, z, rotY, room, t: Date.now(), name: getPlayerName() });
 }
 
 export function sendChatMessage(text: string) {
+  const playerId = getPlayerId();
+  const trimmed = text.trim().slice(0, 200);
+  if (!playerId || !trimmed) return;
   const name = getPlayerName();
-  push(ref(db, `chat/${playerId}`), { name, text, t: Date.now() });
-  update(ref(db, `players/${playerId}`), { message: text, messageTime: Date.now() });
+  push(ref(db, `chat/${playerId}`), { name, text: trimmed, t: Date.now() });
+  update(ref(db, `players/${playerId}`), { message: trimmed, messageTime: Date.now() });
   setTimeout(() => update(ref(db, `players/${playerId}`), { message: null, messageTime: null }), 10000);
 }
 
@@ -53,6 +63,28 @@ export function useOtherPlayers(): RemotePlayer[] {
   const [others, setOthers] = useState<RemotePlayer[]>([]);
 
   useEffect(() => {
+    let cancelled = false;
+    let cleanup: (() => void) | undefined;
+
+    authReady.then((playerId) => {
+      if (cancelled) return;
+      cleanup = subscribePlayers(playerId, setOthers);
+    }).catch((err) => console.error("Firebase sign-in failed", err));
+
+    return () => {
+      cancelled = true;
+      cleanup?.();
+    };
+  }, []);
+
+  return others;
+}
+
+function subscribePlayers(
+  playerId: string,
+  setOthers: (players: RemotePlayer[]) => void,
+): () => void {
+  {
     const myRef = ref(db, `players/${playerId}`);
     const myChatRef = ref(db, `chat/${playerId}`);
     onDisconnect(myRef).remove();
@@ -83,27 +115,35 @@ export function useOtherPlayers(): RemotePlayer[] {
       set(myRef, null);
       set(myChatRef, null);
     };
-  }, []);
-
-  return others;
+  }
 }
 
 export function useChat(): ChatMessage[] {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   useEffect(() => {
-    const unsub = onValue(ref(db, "chat"), (snap) => {
-      const data = snap.val();
-      if (!data) { setMessages([]); return; }
-      const all: ChatMessage[] = [];
-      for (const pid of Object.keys(data)) {
-        for (const [id, m] of Object.entries(data[pid] as Record<string, any>)) {
-          all.push({ id, ...m });
+    let cancelled = false;
+    let unsub: (() => void) | undefined;
+
+    authReady.then(() => {
+      if (cancelled) return;
+      unsub = onValue(ref(db, "chat"), (snap) => {
+        const data = snap.val();
+        if (!data) { setMessages([]); return; }
+        const all: ChatMessage[] = [];
+        for (const pid of Object.keys(data)) {
+          for (const [id, m] of Object.entries(data[pid] as Record<string, any>)) {
+            all.push({ id, ...m });
+          }
         }
-      }
-      setMessages(all.sort((a, b) => a.t - b.t).slice(-20));
-    });
-    return () => unsub();
+        setMessages(all.sort((a, b) => a.t - b.t).slice(-20));
+      });
+    }).catch((err) => console.error("Firebase sign-in failed", err));
+
+    return () => {
+      cancelled = true;
+      unsub?.();
+    };
   }, []);
 
   return messages;

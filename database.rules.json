@@ -1,0 +1,34 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "players": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid",
+        "x": { ".validate": "newData.isNumber() && newData.val() > -60 && newData.val() < 60" },
+        "z": { ".validate": "newData.isNumber() && newData.val() > -60 && newData.val() < 60" },
+        "rotY": { ".validate": "newData.isNumber()" },
+        "t": { ".validate": "newData.isNumber()" },
+        "room": { ".validate": "newData.val() == 'lounge' || newData.val() == 'cinema'" },
+        "name": { ".validate": "newData.isString() && newData.val().length <= 20" },
+        "message": { ".validate": "newData.isString() && newData.val().length <= 200" },
+        "messageTime": { ".validate": "newData.isNumber()" },
+        "$other": { ".validate": false }
+      }
+    },
+    "chat": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid",
+        "$msgId": {
+          ".validate": "newData.hasChildren(['name', 'text', 't'])",
+          "name": { ".validate": "newData.isString() && newData.val().length <= 20" },
+          "text": { ".validate": "newData.isString() && newData.val().length <= 200" },
+          "t": { ".validate": "newData.isNumber()" },
+          "$other": { ".validate": false }
+        }
+      }
+    }
+  }
+}

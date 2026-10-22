@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { playerId } from "@/game/multiplayer";
+import { playerTag } from "@/game/multiplayer";
 
 export function NamePrompt({ onDone }: { onDone: () => void }) {
   const [value, setValue] = useState("");
 
   const submit = () => {
-    const name = value.trim() || `Player_${playerId.slice(0, 4)}`;
+    const name = value.trim() || `Player_${playerTag}`;
     sessionStorage.setItem("vr-player-name", name);
     onDone();
   };
