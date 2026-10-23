@@ -1,7 +1,9 @@
 [build]
   command = "npm run build"
   publish = "dist"
+  functions = "netlify/functions"
 
+# Set AZURE_SPEECH_KEY and AZURE_SPEECH_REGION in Netlify's environment settings.
 [[redirects]]
   from = "/*"
   to = "/index.html"

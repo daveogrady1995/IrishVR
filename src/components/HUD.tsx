@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Camera, Gamepad2, Keyboard, Eye } from 'lucide-react';
+import { Camera, Gamepad2, Keyboard, Eye, Volume2, VolumeX } from 'lucide-react';
 import { useGame } from '@/game/store';
 
 function Key({ children }: { children: React.ReactNode }) {
@@ -14,6 +14,9 @@ export function HUD() {
   const isMobile = useGame((s) => s.isMobile);
   const cameraMode = useGame((s) => s.cameraMode);
   const toggleCamera = useGame((s) => s.toggleCamera);
+  const voiceEnabled = useGame((s) => s.voiceEnabled);
+  const voiceError = useGame((s) => s.voiceError);
+  const setVoiceEnabled = useGame((s) => s.setVoiceEnabled);
   const [showHelp, setShowHelp] = useState(true);
 
   useEffect(() => {
@@ -37,17 +40,48 @@ export function HUD() {
         </div>
 
         {/* Camera toggle */}
-        <button
-          onClick={toggleCamera}
-          className="pointer-events-auto flex items-center gap-2 rounded-xl border border-white/12 bg-black/40 px-3.5 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-black/55 active:scale-95"
-          style={{ backdropFilter: 'blur(10px)' }}
-        >
-          {cameraMode === 'walk' ? <Camera className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          <span className="hidden sm:inline">
-            {cameraMode === 'walk' ? 'Free Walk' : 'Cinematic'}
-          </span>
-          <span className="sm:hidden">{cameraMode === 'walk' ? 'Walk' : 'Cine'}</span>
-        </button>
+        <div className="pointer-events-auto flex gap-2">
+          <button
+            onClick={() => setVoiceEnabled(voiceError ? true : !voiceEnabled)}
+            aria-pressed={voiceEnabled}
+            title={voiceError ?? 'Azure Gaeilge neural voices: Orla for Ava and Colm for Leo.'}
+            className={`flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-sm font-semibold text-white shadow-lg transition active:scale-95 ${
+              voiceEnabled && !voiceError
+                ? 'border-primary-300/50 bg-primary-500/30 hover:bg-primary-500/40'
+                : 'border-white/12 bg-black/40 hover:bg-black/55'
+            }`}
+            style={{ backdropFilter: 'blur(10px)' }}
+          >
+            {voiceEnabled && !voiceError ? (
+              <Volume2 className="h-4 w-4" />
+            ) : (
+              <VolumeX className="h-4 w-4" />
+            )}
+            <span className="hidden sm:inline">
+              {voiceError
+                ? 'Voice unavailable'
+                : voiceEnabled
+                  ? 'Irish voice on'
+                  : 'Voice off'}
+            </span>
+          </button>
+          <button
+            onClick={toggleCamera}
+            className="flex items-center gap-2 rounded-xl border border-white/12 bg-black/40 px-3.5 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-black/55 active:scale-95"
+            style={{ backdropFilter: 'blur(10px)' }}
+          >
+            {cameraMode === 'walk' ? <Camera className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            <span className="hidden sm:inline">
+              {cameraMode === 'walk' ? 'Free Walk' : 'Cinematic'}
+            </span>
+            <span className="sm:hidden">{cameraMode === 'walk' ? 'Walk' : 'Cine'}</span>
+          </button>
+        </div>
+        {voiceError && (
+          <p className="pointer-events-auto absolute right-4 top-16 max-w-xs rounded-lg border border-red-300/20 bg-black/75 px-3 py-2 text-xs text-red-100 shadow-lg">
+            {voiceError}
+          </p>
+        )}
       </div>
 
       {/* Controls guide - desktop */}
@@ -70,7 +104,7 @@ export function HUD() {
               </div>
             </div>
             <p className="mt-2.5 text-center text-[10px] leading-tight text-white/45">
-              Walk up to the couple and press <span className="font-bold text-primary-300">[E]</span>
+              Walk up to Ava and Leo to chat in Irish
             </p>
             <div className="mt-2 border-t border-white/10 pt-2 text-center text-[10px] leading-tight text-white/45">
               <span className="font-bold text-secondary-300">Right-click + drag</span> to orbit camera

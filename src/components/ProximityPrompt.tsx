@@ -23,10 +23,10 @@ export function ProximityPrompt() {
           </span>
           <span className="text-sm font-semibold text-white">
             {dialogueEnded
-              ? 'Tap to Replay Conversation'
+              ? 'Tap to chat with Ava and Leo again'
               : isMobile
-                ? 'Tap to Listen to Conversation'
-                : 'Press [E] or Tap to Listen'}
+                ? 'Tap to join their conversation'
+                : 'Press [E] or tap to join their conversation'}
           </span>
           {!isMobile && !dialogueEnded && (
             <kbd className="flex h-6 min-w-6 items-center justify-center rounded-md border border-primary-300/50 bg-primary-500/20 px-1.5 text-xs font-bold text-primary-200">

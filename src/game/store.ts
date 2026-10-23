@@ -8,6 +8,8 @@ interface GameState {
   lineIndex: number;
   paused: boolean;
   dialogueEnded: boolean;
+  voiceEnabled: boolean;
+  voiceError: string | null;
   cameraMode: CameraMode;
   isMobile: boolean;
   seatId: number | null;
@@ -30,11 +32,13 @@ interface GameState {
   setNearby: (v: boolean) => void;
   startListening: () => void;
   stopListening: () => void;
-  nextLine: () => void;
+  nextLine: (lineIndex?: number) => void;
   setPaused: (v: boolean) => void;
   togglePause: () => void;
   toggleCamera: () => void;
   restart: () => void;
+  setVoiceEnabled: (v: boolean) => void;
+  setVoiceError: (error: string | null) => void;
   setIsMobile: (v: boolean) => void;
 }
 
@@ -44,6 +48,8 @@ export const useGame = create<GameState>((set, get) => ({
   lineIndex: 0,
   paused: false,
   dialogueEnded: false,
+  voiceEnabled: true,
+  voiceError: null,
   cameraMode: "walk",
   isMobile: false,
   seatId: null,
@@ -123,9 +129,9 @@ export const useGame = create<GameState>((set, get) => ({
     }
   },
   stopListening: () => set({ listening: false, paused: false }),
-  nextLine: () => {
+  nextLine: (nextIndex) => {
     const { lineIndex } = get();
-    set({ lineIndex: lineIndex + 1 });
+    set({ lineIndex: nextIndex ?? lineIndex + 1 });
   },
   setPaused: (v) => set({ paused: v }),
   togglePause: () => set((s) => ({ paused: !s.paused })),
@@ -135,6 +141,8 @@ export const useGame = create<GameState>((set, get) => ({
     })),
   restart: () =>
     set({ lineIndex: 0, dialogueEnded: false, paused: false, listening: true }),
+  setVoiceEnabled: (v) => set({ voiceEnabled: v, voiceError: v ? null : get().voiceError }),
+  setVoiceError: (error) => set({ voiceError: error }),
   setIsMobile: (v) => {
     if (get().isMobile !== v) set({ isMobile: v });
   },

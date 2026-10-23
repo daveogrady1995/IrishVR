@@ -15,7 +15,7 @@ export function DialogueOverlay() {
 
   const [typed, setTyped] = useState('');
   const line = DIALOGUE[lineIndex];
-  const isLast = lineIndex >= DIALOGUE.length - 1;
+  const isLast = lineIndex === DIALOGUE.length - 1;
   const raf = useRef<number>(0);
   const startTime = useRef<number>(0);
   const fullText = line?.text ?? '';
@@ -41,8 +41,10 @@ export function DialogueOverlay() {
       if (elapsed >= line.duration) {
         if (isLast) {
           useGame.setState({ dialogueEnded: true });
+        } else if (line.choices) {
+          setTyped(fullText);
         } else {
-          nextLine();
+          nextLine(line.nextLine);
         }
         return;
       }
@@ -150,8 +152,30 @@ export function DialogueOverlay() {
                     <span className="typewriter-caret" style={{ color }} />
                   )}
                 </p>
+                <p className="mt-1 text-sm leading-relaxed text-white/55">
+                  {line?.translation}
+                </p>
               </div>
             </div>
+
+            {line?.choices && typed.length >= fullText.length && (
+              <div className="flex flex-col gap-2 px-5 pb-4 pl-[4.75rem]">
+                {line.choices.map((choice) => (
+                  <button
+                    key={choice.nextLine}
+                    onClick={() => nextLine(choice.nextLine)}
+                    className="rounded-xl border border-white/15 bg-white/5 px-3.5 py-2.5 text-left transition hover:border-primary-300/50 hover:bg-white/10 active:scale-[0.99]"
+                  >
+                    <span className="block text-sm font-semibold text-white/90">
+                      {choice.text}
+                    </span>
+                    <span className="mt-0.5 block text-xs text-white/50">
+                      {choice.translation}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Controls bar */}
             <div className="flex items-center gap-2 border-t border-white/8 px-4 py-2.5">
@@ -174,7 +198,7 @@ export function DialogueOverlay() {
                   if (isLast) {
                     useGame.setState({ dialogueEnded: true });
                   } else {
-                    nextLine();
+                    nextLine(line?.choices?.[0]?.nextLine ?? line?.nextLine);
                   }
                 }}
                 className="flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/80 transition hover:bg-white/10 active:scale-95"
