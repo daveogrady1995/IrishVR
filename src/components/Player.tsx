@@ -4,10 +4,11 @@ import * as THREE from "three";
 import { Character } from "./Character";
 import { getMoveVector, input } from "@/game/input";
 import { resolveCollision } from "@/game/collision";
-import { PLAYER, CAMERA, ROOM, SEATS, DOOR_REACH } from "@/game/constants";
+import { PLAYER, CAMERA, ROOM, SEATS, DOOR_REACH, SHOP, SHOP_DOOR, SHOP_EXIT } from "@/game/constants";
 import { useGame } from "@/game/store";
 import { findNearSeat } from "@/game/seats";
 import { publishPosition } from "@/game/multiplayer";
+import type { RoomId } from "@/game/types";
 
 const _look = new THREE.Vector3();
 const _cinematicPos = new THREE.Vector3();
@@ -18,7 +19,12 @@ const SEATED_EYE_HEIGHT = 1.25;
 const ARRIVAL = {
   lounge: { x: 0, z: -ROOM.half + 2.4, yaw: Math.PI },
   cinema: { x: 0, z: -ROOM.half - 2.4, yaw: 0 },
+  // Behind the counter, having come in through the east door.
+  shop: { x: SHOP.halfWidth - 2.4, z: SHOP_EXIT.z, yaw: Math.PI / 2 },
 } as const;
+
+// Leaving the shop puts the player back at the lounge's shop door rather than the cinema door.
+const LOUNGE_FROM_SHOP = { x: ROOM.half - 2.4, z: SHOP_DOOR.z, yaw: Math.PI / 2 };
 
 // Corridor between seat rows, in front of the seat.
 const STAND_OFFSET_Z = -1.2;
@@ -29,6 +35,7 @@ export function Player() {
   const eye = useRef(EYE_HEIGHT);
   const prevSeat = useRef<number | null>(null);
   const currentRoom = useRef(useGame.getState().room);
+  const prevRoom = useRef<RoomId>(useGame.getState().room);
   const { camera, gl } = useThree();
   const cameraMode = useGame((s) => s.cameraMode);
   const camMode = useRef(cameraMode);
@@ -57,7 +64,9 @@ export function Player() {
     const room = store.room;
     if (currentRoom.current !== room) {
       currentRoom.current = room;
-      const a = ARRIVAL[room];
+      const a =
+        room === "lounge" && prevRoom.current === "shop" ? LOUNGE_FROM_SHOP : ARRIVAL[room];
+      prevRoom.current = room;
       g.position.set(a.x, g.position.y, a.z);
       input.cameraYaw = a.yaw;
       input.cameraPitch = 0;
@@ -94,10 +103,22 @@ export function Player() {
     }
     prevSeat.current = seatId;
 
-    const nearDoor =
-      Math.abs(g.position.x) < DOOR_REACH.x &&
-      Math.abs(g.position.z + ROOM.half) < DOOR_REACH.z;
-    store.setNearDoor(nearDoor && seatId === null);
+    const { x: px, z: pz } = g.position;
+    let doorTarget: RoomId | null = null;
+    if (room === "shop") {
+      if (Math.abs(px - SHOP.halfWidth) < DOOR_REACH.z && Math.abs(pz - SHOP_EXIT.z) < DOOR_REACH.x) {
+        doorTarget = "lounge";
+      }
+    } else if (Math.abs(px) < DOOR_REACH.x && Math.abs(pz + ROOM.half) < DOOR_REACH.z) {
+      doorTarget = room === "lounge" ? "cinema" : "lounge";
+    } else if (
+      room === "lounge" &&
+      Math.abs(px - ROOM.half) < DOOR_REACH.z &&
+      Math.abs(pz - SHOP_DOOR.z) < DOOR_REACH.x
+    ) {
+      doorTarget = "shop";
+    }
+    store.setNearDoor(seatId === null ? doorTarget : null);
     store.setNearSeat(
       room === "cinema" && seatId === null
         ? findNearSeat(g.position.x, g.position.z, input.cameraYaw)

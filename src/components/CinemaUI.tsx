@@ -16,7 +16,7 @@ function useCinemaKeys() {
       if (k === "e") {
         if (s.seatId !== null) s.stand();
         else if (s.nearDoor && !s.listening) {
-          s.travel(s.room === "lounge" ? "cinema" : "lounge");
+          s.travel(s.nearDoor);
         } else if (s.nearSeat !== null) s.sit(s.nearSeat);
       } else if (s.inCinema && !s.listening) {
         if (k === " ") {
@@ -41,7 +41,6 @@ export function CinemaUI() {
   const seatId = useGame((s) => s.seatId);
   const nearSeat = useGame((s) => s.nearSeat);
   const inCinema = useGame((s) => s.inCinema);
-  const room = useGame((s) => s.room);
   const nearDoor = useGame((s) => s.nearDoor);
   const listening = useGame((s) => s.listening);
   const travel = useGame((s) => s.travel);
@@ -55,8 +54,8 @@ export function CinemaUI() {
 
   const title = VIDEOS[videoIndex]?.title;
 
-  const destination = room === "lounge" ? "cinema" : "lounge";
-  const destinationLabel = room === "lounge" ? "Cinema" : "Lounge";
+  const destination = nearDoor ?? "lounge";
+  const destinationLabel = { lounge: "Lobby", cinema: "Cinema", shop: "Shop" }[destination];
 
   return (
     <>

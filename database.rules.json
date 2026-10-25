@@ -10,7 +10,7 @@
         "z": { ".validate": "newData.isNumber() && newData.val() > -60 && newData.val() < 60" },
         "rotY": { ".validate": "newData.isNumber()" },
         "t": { ".validate": "newData.isNumber()" },
-        "room": { ".validate": "newData.val() == 'lounge' || newData.val() == 'cinema'" },
+        "room": { ".validate": "newData.val() == 'lounge' || newData.val() == 'cinema' || newData.val() == 'shop'" },
         "name": { ".validate": "newData.isString() && newData.val().length <= 20" },
         "message": { ".validate": "newData.isString() && newData.val().length <= 200" },
         "messageTime": { ".validate": "newData.isNumber()" },

@@ -80,6 +80,43 @@ export const WALLS: AABB[] = [
   { minX: -DOOR.halfWidth, maxX: DOOR.halfWidth, minZ: -H - T, maxZ: -H + T },
 ];
 
+// The shop is only mounted while the player is inside it, so it reuses the lounge's world space.
+// The front wall (z = +halfDepth) faces the street; customers come in through STREET_DOOR.
+export const SHOP = {
+  halfWidth: 7,
+  halfDepth: 8,
+  counterZ: -4.6,
+  customerZ: -3.4,
+  // Pavement outside the front wall, where customers walk in from.
+  streetZ: 10,
+  wallHeight: 4,
+};
+export const STREET_DOOR = { x: -2.6, halfWidth: 1.1, height: 2.6 };
+export const SHOP_WINDOWS = [
+  { x: 2.4, halfWidth: 1.8, y0: 0.9, y1: 2.7 },
+  { x: 5.4, halfWidth: 0.9, y0: 0.9, y1: 2.7 },
+  { x: -5.6, halfWidth: 0.9, y0: 0.9, y1: 2.7 },
+];
+// Door back to the lounge on the shop's east wall, and the matching door in the lounge's east wall.
+export const SHOP_EXIT = { z: -6.2 };
+export const SHOP_DOOR = { z: -3.5 };
+
+const SW = SHOP.halfWidth;
+const SD = SHOP.halfDepth;
+export const SHOP_COLLIDERS: AABB[] = [
+  { minX: -SW - T, maxX: SW + T, minZ: -SD - T, maxZ: -SD + T },
+  { minX: -SW - T, maxX: SW + T, minZ: SD - T, maxZ: SD + T },
+  { minX: -SW - T, maxX: -SW + T, minZ: -SD, maxZ: SD },
+  { minX: SW - T, maxX: SW + T, minZ: -SD, maxZ: SD },
+  // counter
+  { minX: -3, maxX: 3, minZ: SHOP.counterZ - 0.5, maxZ: SHOP.counterZ + 0.5 },
+  // customer shelves along both side walls
+  { minX: -SW, maxX: -SW + 0.9, minZ: -1.4, maxZ: 5.3 },
+  { minX: SW - 0.9, maxX: SW, minZ: -1.4, maxZ: 5.3 },
+  // back shelves
+  { minX: -SW, maxX: SW, minZ: -SD, maxZ: -SD + 0.7 },
+];
+
 export const OBSTACLES: AABB[] = [
   { minX: -1.1, maxX: 1.1, minZ: -0.7, maxZ: 0.7 },
   { minX: -2.5, maxX: -1.9, minZ: -0.55, maxZ: 0.55 },

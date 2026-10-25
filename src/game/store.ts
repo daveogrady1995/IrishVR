@@ -16,12 +16,12 @@ interface GameState {
   nearSeat: number | null;
   inCinema: boolean;
   room: RoomId;
-  nearDoor: boolean;
+  nearDoor: RoomId | null;
   videoIndex: number;
   videoPlaying: boolean;
   videoStarted: boolean;
   setNearSeat: (id: number | null) => void;
-  setNearDoor: (v: boolean) => void;
+  setNearDoor: (target: RoomId | null) => void;
   travel: (room: RoomId) => void;
   sit: (id: number) => void;
   stand: () => void;
@@ -56,22 +56,22 @@ export const useGame = create<GameState>((set, get) => ({
   nearSeat: null,
   inCinema: false,
   room: "lounge",
-  nearDoor: false,
+  nearDoor: null,
   videoIndex: 0,
   videoPlaying: false,
   videoStarted: false,
   setNearSeat: (id) => {
     if (get().nearSeat !== id) set({ nearSeat: id });
   },
-  setNearDoor: (v) => {
-    if (get().nearDoor !== v) set({ nearDoor: v });
+  setNearDoor: (target) => {
+    if (get().nearDoor !== target) set({ nearDoor: target });
   },
   travel: (room) => {
     if (get().room === room) return;
     const base = {
       room,
       inCinema: room === "cinema",
-      nearDoor: false,
+      nearDoor: null,
       nearSeat: null,
       seatId: null,
       nearby: false,

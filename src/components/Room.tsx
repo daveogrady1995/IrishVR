@@ -1,10 +1,11 @@
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { useTexture } from "@react-three/drei";
-import { ROOM, DOOR } from "@/game/constants";
+import { ROOM, DOOR, SHOP_DOOR } from "@/game/constants";
 import { SamMaguireCup } from "./SamMaguireCup";
 import { Door } from "./Door";
 import { CinemaSigns } from "./Cinema";
+import { WallDoor } from "./WallDoor";
 
 function Wall({
   args,
@@ -436,6 +437,11 @@ export function Room() {
 
       <Door />
       <CinemaSigns />
+      <WallDoor
+        position={[half - 0.12, 0, SHOP_DOOR.z]}
+        rotationY={-Math.PI / 2}
+        label="🛒 SIOPA"
+      />
       <Rug />
       <CoffeeTable />
       <Sofa position={[0, 0, 8]} rotation={Math.PI} color="#783c0e" />

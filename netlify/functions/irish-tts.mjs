@@ -1,4 +1,5 @@
 import { AMBIENT_DIALOGUE, DIALOGUE } from '../../src/game/dialogue';
+import { resolveShopSpeech } from '../../src/game/shopData';
 
 const VOICES = {
   Ava: 'ga-IE-OrlaNeural',
@@ -36,24 +37,38 @@ export async function handler(event) {
   }
 
   const query = event.queryStringParameters ?? {};
-  if (Object.keys(query).length !== 1 || typeof query.line !== 'string') {
+  const param = typeof query.line === 'string' ? 'line' : 'shop';
+  if (Object.keys(query).length !== 1 || typeof query[param] !== 'string') {
     return textResponse(400, 'Request must include one approved line identifier.');
   }
 
-  const lineMatch = /^(dialogue|ambient)-(\d+)$/.exec(query.line);
-  if (!lineMatch) {
-    return textResponse(400, 'Unknown Irish dialogue line.');
+  let voice;
+  let text;
+  if (param === 'line') {
+    const lineMatch = /^(dialogue|ambient)-(\d+)$/.exec(query.line);
+    if (!lineMatch) {
+      return textResponse(400, 'Unknown Irish dialogue line.');
+    }
+
+    const lineIndex = Number(lineMatch[2]);
+    const lines = lineMatch[1] === 'dialogue' ? DIALOGUE : AMBIENT_DIALOGUE;
+    const line = lines[lineIndex];
+    if (!Number.isSafeInteger(lineIndex) || !line) {
+      return textResponse(400, 'Unknown Irish dialogue line.');
+    }
+    voice = VOICES[line.speaker];
+    text = line.text;
+  } else {
+    const shopMatch = /^(orla|colm)\.([a-z0-9-]+)$/.exec(query.shop);
+    const shopText = shopMatch ? resolveShopSpeech(shopMatch[2]) : null;
+    if (!shopText) {
+      return textResponse(400, 'Unknown shop line.');
+    }
+    voice = shopMatch[1] === 'orla' ? VOICES.Ava : VOICES.Leo;
+    text = shopText;
   }
 
-  const lineIndex = Number(lineMatch[2]);
-  const lines = lineMatch[1] === 'dialogue' ? DIALOGUE : AMBIENT_DIALOGUE;
-  const line = lines[lineIndex];
-  if (!Number.isSafeInteger(lineIndex) || !line) {
-    return textResponse(400, 'Unknown Irish dialogue line.');
-  }
-
-  const { speaker, text } = line;
-  const key = `${speaker}:${text}`;
+  const key = `${voice}:${text}`;
   const cachedAudio = audioCache.get(key);
   if (cachedAudio) {
     return {
@@ -77,7 +92,7 @@ export async function handler(event) {
     );
   }
 
-  const ssml = `<speak version="1.0" xml:lang="ga-IE"><voice xml:lang="ga-IE" name="${VOICES[speaker]}">${escapeXml(text)}</voice></speak>`;
+  const ssml = `<speak version="1.0" xml:lang="ga-IE"><voice xml:lang="ga-IE" name="${voice}">${escapeXml(text)}</voice></speak>`;
   let audio;
   try {
     const azureResponse = await fetch(

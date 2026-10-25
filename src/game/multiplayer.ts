@@ -43,6 +43,8 @@ export interface ChatMessage {
 let lastPublish = 0;
 
 export function publishPosition(x: number, z: number, rotY: number, room: RoomId) {
+  // The shop is a private room, so there is nothing to share.
+  if (room === "shop") return;
   const playerId = getPlayerId();
   if (!playerId || Date.now() - lastPublish < 100) return;
   lastPublish = Date.now();

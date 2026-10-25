@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { useGame } from "@/game/store";
 import { Room } from "./Room";
 import { Cinema } from "./Cinema";
+import { Shop } from "./Shop";
 import { Player } from "./Player";
 import { NPCs } from "./NPCs";
 import { OtherPlayers } from "./OtherPlayers";
@@ -98,6 +99,8 @@ export function Scene() {
               color="#fff0d4"
             />
           </>
+        ) : room === "shop" ? (
+          <Shop />
         ) : (
           <Cinema />
         )}

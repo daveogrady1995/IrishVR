@@ -1,6 +1,7 @@
 import {
   OBSTACLES,
   SEAT_COLLIDERS,
+  SHOP_COLLIDERS,
   WALLS,
   CINEMA,
   PLAYER,
@@ -17,6 +18,7 @@ const MAX_Z = WORLD_MAX_Z - MARGIN;
 const COLLIDERS: Record<RoomId, AABB[]> = {
   lounge: [...WALLS, ...OBSTACLES],
   cinema: [...WALLS, ...SEAT_COLLIDERS],
+  shop: SHOP_COLLIDERS,
 };
 
 function closestOnAABB(px: number, pz: number, box: AABB) {

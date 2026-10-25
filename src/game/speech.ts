@@ -3,7 +3,16 @@ let activeObjectUrl: string | null = null;
 let activeRequest: AbortController | null = null;
 const audioCache = new Map<string, Blob>();
 
-export async function speakIrish(lineId: string): Promise<void> {
+export function speakIrish(lineId: string): Promise<void> {
+  return playSpeech(lineId, `line=${encodeURIComponent(lineId)}`);
+}
+
+export function speakShopLine(voice: 'orla' | 'colm', key: string): Promise<void> {
+  const id = `${voice}.${key}`;
+  return playSpeech(`shop:${id}`, `shop=${encodeURIComponent(id)}`);
+}
+
+async function playSpeech(lineId: string, query: string): Promise<void> {
   stopIrishSpeech();
   const controller = new AbortController();
   activeRequest = controller;
@@ -12,7 +21,7 @@ export async function speakIrish(lineId: string): Promise<void> {
     let audio = audioCache.get(lineId);
     if (!audio) {
       const response = await fetch(
-        `/.netlify/functions/irish-tts?line=${encodeURIComponent(lineId)}`,
+        `/.netlify/functions/irish-tts?${query}`,
         { signal: controller.signal },
       );
       if (!response.ok) {

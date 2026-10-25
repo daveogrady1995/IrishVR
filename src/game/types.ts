@@ -13,4 +13,4 @@ export interface DialogueLine {
 
 export type CameraMode = 'walk' | 'cinematic';
 
-export type RoomId = 'lounge' | 'cinema';
+export type RoomId = 'lounge' | 'cinema' | 'shop';
